@@ -102,8 +102,17 @@
       .bf{display:none}
       .mb{gap:3px}.mo{padding:4px 9px;font-size:10px}
       #music-bar{display:none!important} /* on mobile, always use mini player */
-      #music-mini.on{display:flex!important}
-      .act-bar{bottom:clamp(70px,11vh,86px)}
+      #music-mini.on{display:flex!important; bottom:20px; left:50%; transform:translateX(-50%); width:max-content; background:rgba(10,12,16,.85); border-radius:30px; border:1px solid rgba(255,255,255,.08); padding:10px 16px;}
+      .act-bar{bottom:clamp(110px,18vh,130px); transform:translateX(-50%) scale(0.85); width:max-content}
+      .dp{transform-origin:bottom right; transform:scale(0.8); bottom:clamp(40px,7vh,50px)}
+      .sp2{transform-origin:bottom left; transform:scale(0.8); bottom:clamp(40px,7vh,50px)}
+      .intro-bg-kanji{font-size:120vw}
+      .it{font-size:26px; letter-spacing:0.4em; margin-right:-0.4em}
+      .is{letter-spacing:0.15em; font-size:9px}
+      .is::before, .is::after{width:15px}
+      .iq{font-size:11px; margin-top:24px; max-width:85vw}
+      .ib{margin-top:30px; padding:12px 32px}
+      .stats{transform:translateX(-50%) scale(0.85); top:clamp(40px,5vh,60px)}
     }
 
     /* ─── Achievement Toast ─── */
