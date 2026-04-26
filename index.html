@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>渡り WATARI — Birds &amp; Nujabes</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{width:100%;height:100%;overflow:hidden;background:#0a0c10;font-family:'Zen Kaku Gothic New',sans-serif;color:#e8e6e0;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+    canvas{display:block;position:fixed;inset:0;touch-action:none}
+    button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
+
+    /* ─── Intro Redesign ─── */
+    #intro { position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; background: radial-gradient(circle at center, rgba(8,6,16,0.3) 0%, rgba(4,3,8,0.9) 100%); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); transition:opacity 0.3s ease; overflow:hidden; }
+    #intro.out { opacity:0; pointer-events:none; }
+    
+    .intro-bg-kanji { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:55vh; color:#c8a66a; opacity:0.03; white-space:nowrap; pointer-events:none; font-weight:bold; animation: driftKanji 40s linear infinite; }
+    @keyframes driftKanji { 0% { transform: translate(-55%, -50%); } 50% { transform: translate(-45%, -50%); } 100% { transform: translate(-55%, -50%); } }
+
+    .intro-content { position:relative; z-index:10; display:flex; flex-direction:column; align-items:center; animation: fadeUp 1.5s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeUp { 0% { opacity:0; transform:translateY(30px); } 100% { opacity:1; transform:translateY(0); } }
+
+    .it { font-size:clamp(32px, 6vw, 54px); letter-spacing:0.8em; font-weight:300; margin-right:-0.8em; color:#fff; text-shadow:0 0 30px rgba(255,255,255,0.4), 0 0 80px rgba(200,166,106,0.2); }
+    .is { font-size:clamp(10px, 1.5vw, 13px); letter-spacing:0.3em; opacity:0.5; text-transform:uppercase; margin-top:16px; position:relative; }
+    .is::before, .is::after { content:''; position:absolute; top:50%; width:30px; height:1px; background:rgba(200,166,106,0.3); }
+    .is::before { right:100%; margin-right:15px; }
+    .is::after { left:100%; margin-left:15px; }
+
+    .iq { margin-top:40px; font-size:clamp(12px, 1.6vw, 15px); font-style:italic; color:rgba(232,230,224,0.6); letter-spacing:0.08em; text-align:center; max-width:480px; line-height:1.8; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+    
+    .ib { margin-top:50px; position:relative; padding:18px 54px; border:1px solid rgba(200,166,106,0.25); border-radius:100px; background:rgba(200,166,106,0.03); overflow:hidden; transition:all 0.4s cubic-bezier(0.16,1,0.3,1); backdrop-filter: blur(4px); }
+    .ib-text { position:relative; z-index:2; font-size:13px; font-weight:400; letter-spacing:0.15em; color:#c8a66a; transition:all 0.4s ease; text-transform:uppercase; }
+    .ib-glow { position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(200,166,106,0.15), transparent); transform:translateX(-100%); transition:transform 0.6s ease; z-index:1; }
+    .ib:hover { border-color:rgba(200,166,106,0.6); background:rgba(200,166,106,0.08); box-shadow:0 0 40px rgba(200,166,106,0.15), inset 0 0 20px rgba(200,166,106,0.1); transform:translateY(-2px); }
+    .ib:hover .ib-text { letter-spacing:0.25em; color:#fff; text-shadow:0 0 10px rgba(200,166,106,0.8); }
+    .ib:hover .ib-glow { transform:translateX(100%); }
+
+    .ina { margin-top:30px; display:flex; align-items:center; gap:8px; font-size:10px; opacity:0.3; letter-spacing:0.1em; text-transform:uppercase; animation: pulseFade 3s ease-in-out infinite; }
+    @keyframes pulseFade { 0%, 100% { opacity:0.15; } 50% { opacity:0.4; } }
+
+    .intro-particles { position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none; }
+    .ip { position:absolute; width:2px; height:2px; border-radius:50%; background:#c8a66a; opacity:0; animation:ipf var(--dur) var(--del) ease-in-out infinite; box-shadow:0 0 10px #c8a66a; }
+    @keyframes ipf { 0% { transform:translateY(0) scale(1); opacity:0; } 50% { opacity:0.5; transform:translateY(-30vh) scale(1.5); } 100% { transform:translateY(-60vh) scale(0.5); opacity:0; } }
+
+    /* ─── HUD ─── */
+    #hud{position:fixed;inset:0;z-index:10;pointer-events:none;padding:clamp(8px,2vw,18px);display:none;flex-direction:column;justify-content:space-between}
+    #hud.on{display:flex}
+    .g{background:rgba(10,12,16,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);border-radius:12px}
+    .ht{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}
+    .hb{display:flex;align-items:center;gap:8px;padding:8px 14px;pointer-events:auto}
+    .hb .k{font-size:clamp(18px,3vw,26px);color:#c8a66a;text-shadow:0 0 16px rgba(200,166,106,.4)}
+    .hb .t{font-size:clamp(11px,1.6vw,15px);letter-spacing:.3em;opacity:.8}
+    .mb{display:flex;gap:4px;pointer-events:auto;padding:5px 6px;flex-wrap:wrap}
+    .mo{padding:5px 12px;border-radius:16px;font-size:clamp(10px,1.4vw,12px);letter-spacing:.04em;color:rgba(232,230,224,.5);border:1px solid rgba(255,255,255,.06);transition:all .2s;white-space:nowrap}
+    .mo:hover{color:#e8e6e0;border-color:rgba(255,255,255,.18)}
+    .mo.on{background:rgba(200,166,106,.15);border-color:#c8a66a;color:#c8a66a}
+    .stats{position:fixed;top:clamp(52px,7vh,70px);left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:11;pointer-events:none}
+    .stat{padding:6px 14px;font-size:clamp(10px,1.3vw,12px);letter-spacing:.1em;color:rgba(232,230,224,.5);display:flex;align-items:center;gap:6px}
+    .stat .sv{color:#c8a66a;font-size:clamp(12px,1.6vw,15px);font-weight:400}
+    #collectFlash{position:fixed;inset:0;z-index:47;pointer-events:none;background:radial-gradient(circle at center,rgba(200,166,106,.25),transparent 70%);opacity:0;transition:opacity .15s ease-out}
+
+    /* ─── Music Player ─── */
+    #music-bar{position:fixed;bottom:clamp(8px,2vw,16px);left:clamp(8px,2vw,16px);z-index:15;pointer-events:auto;display:none;width:min(310px,calc(100vw - 24px));padding:12px 14px;flex-direction:column;gap:7px;transition:transform .35s ease,opacity .35s ease}
+    #music-bar.on{display:flex}
+    /* Mini toggle for mobile — shown when player is collapsed */
+    #music-mini{position:fixed;bottom:clamp(8px,2vw,16px);left:clamp(8px,2vw,16px);z-index:16;display:none;align-items:center;gap:8px;padding:7px 12px;pointer-events:auto;cursor:pointer}
+    #music-mini.on{display:flex}
+    #music-mini .mm-title{font-size:10px;letter-spacing:.1em;opacity:.7;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#c8a66a}
+    #music-mini .mm-play{font-size:16px;opacity:.8}
+    #music-expand{font-size:10px;opacity:.35;margin-left:auto;letter-spacing:.08em}
+    .m-title{font-size:11px;letter-spacing:.12em;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;color:#c8a66a}
+    .m-sub{font-size:9px;opacity:.35;letter-spacing:.08em;text-align:center}
+    .m-controls{display:flex;align-items:center;justify-content:center;gap:10px}
+    .m-btn{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;color:rgba(232,230,224,.6);transition:all .2s;cursor:pointer;touch-action:manipulation}
+    .m-btn:hover{color:#c8a66a;background:rgba(200,166,106,.1)}
+    .m-btn.play{width:40px;height:40px;font-size:19px;background:rgba(200,166,106,.15);color:#c8a66a;border:1px solid rgba(200,166,106,.25)}
+    .m-btn.play:hover{background:rgba(200,166,106,.25)}
+    .m-btn.active{color:#c8a66a}
+    .m-seek{width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.08);cursor:pointer;position:relative;overflow:hidden}
+    .m-seek-fill{height:100%;background:linear-gradient(90deg,rgba(200,166,106,.4),#c8a66a);border-radius:2px;width:0%;transition:width .3s linear}
+    .m-time{display:flex;justify-content:space-between;font-size:9px;opacity:.3;letter-spacing:.05em}
+
+    .bf{text-align:center;font-size:clamp(9px,1.2vw,10px);color:rgba(232,230,224,.25);letter-spacing:.05em;line-height:1.7}
+    kbd{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:0 4px;font-family:inherit;font-size:9px}
+    /* D-pad + speed */
+    .dp{position:fixed;bottom:clamp(60px,12vh,90px);right:clamp(12px,3vw,20px);display:flex;flex-direction:column;align-items:center;gap:3px;z-index:15;pointer-events:auto}
+    .dr{display:flex;gap:3px}
+    .db{width:50px;height:50px;border-radius:12px;font-size:20px;display:flex;align-items:center;justify-content:center;color:rgba(232,230,224,.5);touch-action:manipulation}
+    .db:active{background:rgba(200,166,106,.2);color:#c8a66a}
+    .sp2{position:fixed;bottom:clamp(60px,12vh,90px);left:clamp(12px,3vw,20px);display:flex;flex-direction:column;gap:4px;align-items:center;z-index:15;pointer-events:auto}
+    .sp-label{font-size:8px;letter-spacing:.15em;opacity:.35;text-transform:uppercase}
+    .sb{width:50px;height:50px;border-radius:12px;font-size:26px;display:flex;align-items:center;justify-content:center;color:rgba(232,230,224,.5);touch-action:manipulation}
+    .sb:active{background:rgba(200,166,106,.2);color:#c8a66a}
+    /* Action buttons (scatter, V-form) */
+    .act-bar{position:fixed;bottom:clamp(12px,2.5vw,18px);left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:15;pointer-events:auto}
+    .act-btn{padding:10px 18px;border-radius:20px;font-size:clamp(11px,1.5vw,13px);letter-spacing:.06em;color:rgba(232,230,224,.55);border:1px solid rgba(255,255,255,.08);transition:all .2s;white-space:nowrap;touch-action:manipulation}
+    .act-btn:hover{color:#e8e6e0;border-color:rgba(255,255,255,.18)}
+    .act-btn:active,.act-btn.on{background:rgba(200,166,106,.18);border-color:#c8a66a;color:#c8a66a}
+    /* Mobile responsive tweaks */
+    @media(max-width:500px){
+      .bf{display:none}
+      .mb{gap:3px}.mo{padding:4px 9px;font-size:10px}
+      #music-bar{display:none!important} /* on mobile, always use mini player */
+      #music-mini.on{display:flex!important}
+      .act-bar{bottom:clamp(70px,11vh,86px)}
+    }
+
+    /* ─── Achievement Toast ─── */
+    #achToast{position:fixed;top:clamp(80px,11vh,100px);right:clamp(12px,3vw,20px);z-index:25;display:flex;align-items:center;gap:12px;padding:12px 16px;pointer-events:none;opacity:0;transform:translateX(120%);transition:opacity .4s ease,transform .4s cubic-bezier(.34,1.56,.64,1);max-width:clamp(180px,28vw,260px)}
+    #achToast.show{opacity:1;transform:translateX(0)}
+    /* ─── Orb type hint (bottom of screen) ─── */
+    #orbHint{position:fixed;bottom:clamp(130px,20vh,160px);left:50%;transform:translateX(-50%);z-index:20;pointer-events:none;opacity:0;transition:opacity .5s;font-size:9px;letter-spacing:.2em;color:rgba(200,166,106,.6);text-transform:uppercase}
+    #gr{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+    #vi{position:fixed;inset:0;z-index:48;pointer-events:none;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.45))}
+
+    /* ─── Haiku Overlay ─── */
+    #haikuOverlay{position:fixed;top:50%;left:50%;transform:translate(-50%,-55%);z-index:22;pointer-events:none;opacity:0;transition:opacity 1.2s ease;text-align:center;font-size:clamp(13px,2vw,18px);font-style:italic;letter-spacing:.12em;line-height:2.2;color:rgba(232,230,224,.8);text-shadow:0 0 40px rgba(200,166,106,.7),0 2px 20px rgba(0,0,0,.6);white-space:pre-line;max-width:clamp(240px,40vw,400px)}
+    #haikuOverlay.show{opacity:1}
+    /* ─── Milestone Popup ─── */
+    #milestonePop{position:fixed;top:clamp(90px,13vh,115px);left:50%;transform:translateX(-50%);z-index:22;pointer-events:none;opacity:0;transition:opacity .8s ease;text-align:center;font-size:clamp(9px,1.2vw,11px);letter-spacing:.25em;color:rgba(200,166,106,.9);text-shadow:0 0 25px rgba(200,166,106,.5);text-transform:uppercase}
+    #milestonePop.show{opacity:1}
+    /* ─── Combo Display ─── */
+    #comboDisplay{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:22;pointer-events:none;opacity:0;transition:opacity .25s;text-align:center;font-size:clamp(18px,4vw,34px);letter-spacing:.08em;color:#c8a66a;text-shadow:0 0 30px rgba(200,166,106,.8),0 0 60px rgba(200,166,106,.4);font-weight:300}
+    #comboDisplay.show{opacity:1}
+    /* ─── Zen Mode Indicator ─── */
+    #zenBadge{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:21;pointer-events:none;opacity:0;transition:opacity 1s ease;text-align:center;font-size:clamp(10px,1.3vw,12px);letter-spacing:.3em;color:rgba(200,224,255,.5);text-transform:uppercase;margin-top:60px}
+    #zenBadge.show{opacity:1}
+    /* ─── Volume Slider ─── */
+    .m-vol{display:flex;align-items:center;gap:8px;padding:0 2px}
+    .m-vol-label{font-size:9px;opacity:.35;letter-spacing:.1em}
+    .m-vol input[type=range]{flex:1;height:3px;border-radius:2px;appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.1);cursor:pointer;accent-color:#c8a66a}
+    .m-vol input[type=range]::-webkit-slider-thumb{appearance:none;width:12px;height:12px;border-radius:50%;background:#c8a66a;cursor:pointer}
+    /* ─── Zen button active ─── */
+    .act-btn.zen-on{background:rgba(100,180,255,.12);border-color:rgba(140,200,255,.5);color:rgba(180,220,255,.9)}
+  </style>
+</head>
+<body>
+
+<div id="intro">
+  <div class="intro-bg-kanji">渡り</div>
+  
+  <div class="intro-content">
+    <div class="it">W A T A R I</div>
+    <div class="is">the crossing · birds &amp; nujabes</div>
+    
+    <div class="iq">"The beat goes on — somewhere beyond what we can see.<br>Trust the wind. Follow the birds."</div>
+    
+    <button class="ib" id="go">
+      <span class="ib-text">Take Flight</span>
+      <div class="ib-glow"></div>
+    </button>
+    
+    <div class="ina">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+      Headphones Recommended
+    </div>
+  </div>
+  
+  <div class="intro-particles" id="introP"></div>
+</div>
+<script>
+(function(){var c=document.getElementById('introP');for(var i=0;i<40;i++){var d=document.createElement('div');d.className='ip';d.style.left=Math.random()*100+'%';d.style.top=60+Math.random()*40+'%';d.style.setProperty('--dur',(4+Math.random()*8)+'s');d.style.setProperty('--del',(Math.random()*6)+'s');d.style.width=d.style.height=(2+Math.random()*3)+'px';c.appendChild(d)}})();
+</script>
+
+<div id="achToast" class="g"></div>
+<div id="orbHint"></div>
+<div id="hud">
+  <div class="ht">
+    <div class="hb g"><span class="k">渡り</span><span class="t">WATARI</span></div>
+    <div class="mb g">
+      <button class="mo on" data-m="day">☀️ Day</button>
+      <button class="mo" data-m="dusk">🌅 Dusk</button>
+      <button class="mo" data-m="night">🌙 Night</button>
+      <button class="mo" data-m="storm">⛈ Storm</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Journey stats -->
+<div class="stats" id="statsBar" style="display:none">
+  <div class="stat g">✦ <span class="sv" id="orbCount">0</span></div>
+  <div class="stat g">距離 <span class="sv" id="distCount">0</span>m</div>
+</div>
+<div id="collectFlash"></div>
+
+<!-- MUSIC: Native audio player — Samurai Champloo OST direct MP3 -->
+<!-- Full music player (desktop / expanded) -->
+<div id="music-bar" class="g">
+  <div class="m-title" id="mTitle">♪ Samurai Champloo OST</div>
+  <div class="m-sub">nujabes · fat jon · tsutchie · force of nature</div>
+  <div class="m-seek" id="mSeek"><div class="m-seek-fill" id="mFill"></div></div>
+  <div class="m-time"><span id="mCur">0:00</span><span id="mDur">0:00</span></div>
+  <div class="m-controls">
+    <button class="m-btn" id="mShuf" title="Shuffle">⇄</button>
+    <button class="m-btn" id="mPrev" title="Previous">⏮</button>
+    <button class="m-btn play" id="mPlay" title="Play">▶</button>
+    <button class="m-btn" id="mNext" title="Next">⏭</button>
+  </div>
+  <div class="m-vol"><span class="m-vol-label">🔈</span><input type="range" id="mVol" min="0" max="1" step="0.05" value="0.7"></div>
+</div>
+<!-- Mini music player (mobile collapsed state) -->
+<div id="music-mini" class="g">
+  <button class="m-btn play" id="mPlayMini" style="width:32px;height:32px;font-size:14px">▶</button>
+  <span class="mm-title" id="mTitleMini">♪ —</span>
+  <span id="music-expand" style="font-size:11px;opacity:.35;margin-left:8px">↗</span>
+</div>
+<!-- Haiku / Milestone / Combo overlays -->
+<div id="haikuOverlay"></div>
+<div id="milestonePop"></div>
+<div id="comboDisplay"></div>
+<div id="zenBadge">べんり · zen mode</div>
+
+<div class="dp g" id="pad">
+  <button class="db" data-d="up">▲</button>
+  <div class="dr"><button class="db" data-d="left">◀</button><button class="db" data-d="right">▶</button></div>
+  <button class="db" data-d="down">▼</button>
+</div>
+<div class="sp2">
+  <div class="sp-label">speed</div>
+  <button class="sb g" id="su">+</button>
+  <button class="sb g" id="sd">−</button>
+</div>
+<div class="act-bar" id="actBar" style="display:none">
+  <button class="act-btn g" id="btnScatter">💨 Scatter</button>
+  <button class="act-btn g" id="btnVform">🔱 V-Form</button>
+  <button class="act-btn g" id="btnZen">🧘 Zen</button>
+</div>
+
+<div id="gr"></div>
+<div id="vi"></div>
+<canvas id="c"></canvas>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { Sky } from 'three/addons/objects/Sky.js';
+
+// ════════════════════════════════════════════
+// MUSIC — 19 verified CDN tracks (Fisher-Yates shuffled on load)
+// ════════════════════════════════════════════
+const BASE='https://archive.org/download/samurai-champloo-music-record-flac/';
+const playlist=[
+  {t:'battlecry - Nujabes feat. Shing02', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/01.%20battlecry%20-%20Nujabes%20feat.%20Shing02.mp3'},
+  {t:'the space between two world', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/02.%20the%20space%20between%20two%20world.mp3'},
+  {t:'aruarian dance', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/03.%20aruarian%20dance.mp3'},
+  {t:'kujaku', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/04.%20kujaku.mp3'},
+  {t:'mystline', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/05.%20mystline.mp3'},
+  {t:'1st. samurai', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/06.%201st.%20samurai.mp3'},
+  {t:'ole', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/07.%20ole.mp3'},
+  {t:'624 part2', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/08.%20624%20part2.mp3'},
+  {t:'genome', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/09.%20genome.mp3'},
+  {t:'no way back', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/10.%20no%20way%20back.mp3'},
+  {t:'funkin', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/11.%20funkin.mp3'},
+  {t:'stay', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/12.%20stay.mp3'},
+  {t:'chambers', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/13.%20chambers.mp3'},
+  {t:'ask', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/14.%20ask.mp3'},
+  {t:'how you feel', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/15.%20how%20you%20feel.mp3'},
+  {t:'624 part1', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/16.%20624%20part1.mp3'},
+  {t:'Song of the Seasons - MINMI', u:BASE+'Samurai%20Champloo%20Music%20Record/Departure/17.%20Song%20of%20the%20Seasons%20-%20MINMI.mp3'},
+  {t:'just forget', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/01%20just%20forget.mp3'},
+  {t:'nightshift', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/02%20nightshift.mp3'},
+  {t:'STYLE of the Rising Sun', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/03%20STYLE%20of%20the%20Rising%20Sun.mp3'},
+  {t:'the stroll', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/04%20the%20stroll.mp3'},
+  {t:'death wish', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/05%20death%20wish.mp3'},
+  {t:'set it off', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/06%20set%20it%20off.mp3'},
+  {t:'the million way of Drum', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/07%20the%20million%20way%20of%20Drum.mp3'},
+  {t:'space in air [interlude]', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/08%20a%20space%20in%20air%20in%20space%20in%20air%20%5Binterlude%5D.mp3'},
+  {t:'sanctuary ship', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/09%20sanctuary%20ship.mp3'},
+  {t:'haiku [interlude]', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/10%20haiku%20%5Binterlude%5D.mp3'},
+  {t:'tsurugi no mai', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/11%20tsurugi%20no%20mai.mp3'},
+  {t:'dead season', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/12%20dead%20season.mp3'},
+  {t:'decade [interlude]', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/13%20decade%20%5Binterlude%5D.mp3'},
+  {t:'world without words', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/14%20world%20without%20words.mp3'},
+  {t:'kodama [interlude]', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/15%20kodama%20%5Binterlude%5D.mp3'},
+  {t:'silver morning', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/16%20silver%20morning.mp3'},
+  {t:'bracelet', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/17%20bracelet.mp3'},
+  {t:'in position', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/18%20in%20position.mp3'},
+  {t:'night out', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/19%20night%20out.mp3'},
+  {t:'not quite seleah', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/20%20not%20quite%20seleah.mp3'},
+  {t:'labyrinth statistic', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/21%20labyrinth%20statistic.mp3'},
+  {t:'here and there', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/22%20here%20and%20there.mp3'},
+  {t:'Who\'s Theme', u:BASE+'Samurai%20Champloo%20Music%20Record/Impression/23%20Who%27s%20Theme.mp3'},
+  {t:'dry', u:BASE+'Samurai%20Champloo%20Music%20Record/Katana/05-dry.mp3'},
+  {t:'vagrancy', u:BASE+'Samurai%20Champloo%20Music%20Record/Katana/07-vagrancy.mp3'},
+  {t:'sneak chamber', u:BASE+'Samurai%20Champloo%20Music%20Record/Katana/08-sneak%20chamber.mp3'},
+  {t:'YOU feat. Kazami', u:BASE+'Samurai%20Champloo%20Music%20Record/Katana/09-YOU%20feat.%20Kazami.mp3'},
+  {t:'tubed (drum please!!!)', u:BASE+'Samurai%20Champloo%20Music%20Record/Katana/10-tubed%20%28drum%20please%21%21%21%29.mp3'},
+  {t:'pretending to...', u:BASE+'Samurai%20Champloo%20Music%20Record/Katana/11-pretending%20to....mp3'},
+  {t:'mist', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/02.%20mist.mp3'},
+  {t:'judgment on', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/03.%20judgment%20on.mp3'},
+  {t:'loading zone', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/04.%20loading%20zone.mp3'},
+  {t:'paranoid', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/05.%20paranoid.mp3'},
+  {t:'silver children', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/06.%20silver%20children.mp3'},
+  {t:'the long way of drums', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/07.%20the%20long%20way%20of%20drums.mp3'},
+  {t:'new dimension', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/09.%20new%20dimension.mp3'},
+  {t:'breeezin\'', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/12.%20breeezin%27.mp3'},
+  {t:'seventythree', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/15.%20seventythree.mp3'},
+  {t:'I sighed', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/16.%20I%20sighed.mp3'},
+  {t:'sincerely', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/17.%20sincerely.mp3'},
+  {t:'numbernine [back in TYO]', u:BASE+'Samurai%20Champloo%20Music%20Record/Masta/18.%20numbernine%20%5Bback%20in%20TYO%5D.mp3'},
+  {t:'thank you', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/01_thank%20you.mp3'},
+  {t:'yet why not', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/02_yet%20why%20not.mp3'},
+  {t:'strike back', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/03_strike%20back.mp3'},
+  {t:'let me know what U think', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/04_let%20me%20know%20what%20U%20think.mp3'},
+  {t:'mists', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/05_mists.mp3'},
+  {t:'flip', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/06_flip.mp3'},
+  {t:'absolute', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/07_absolute.mp3'},
+  {t:'adapt myself', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/08_adapt%20myself.mp3'},
+  {t:'tuned', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/09_tuned.mp3'},
+  {t:'no icon', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/10_no%20icon.mp3'},
+  {t:'stretch out', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/11_stretch%20out.mp3'},
+  {t:'process', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/12_process.mp3'},
+  {t:'reflective', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/13_reflective.mp3'},
+  {t:'deeper than words', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/14_deeper%20than%20words.mp3'},
+  {t:'2 messages', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/15_2%20messages.mp3'},
+  {t:'the updater', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/16_the%20updater.mp3'},
+  {t:'offers', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/17_offers.mp3'},
+  {t:'FLY feat.AZUMA RIKI', u:BASE+'Samurai%20Champloo%20Music%20Record/Playlist/18_FLY%20feat.AZUMA%20RIKI%20%28SMALL%20CIRCLE%20OF%20FRIENDS%29.mp3'},
+];
+// Fisher-Yates shuffle — different track every session
+(function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}})(playlist);
+
+const audio=new Audio();
+audio.volume=0.7;
+let ci=0,shuffled=false;
+const mTitle=document.getElementById('mTitle');
+const mTitleMini=document.getElementById('mTitleMini');
+const mPlay=document.getElementById('mPlay');
+const mPlayMini=document.getElementById('mPlayMini');
+const mFill=document.getElementById('mFill');
+const mCur=document.getElementById('mCur');
+const mDur=document.getElementById('mDur');
+const mShuf=document.getElementById('mShuf');
+function fmt(s){const m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
+function syncPlayBtn(){const p=audio.paused;mPlay.textContent=p?'▶':'⏸';mPlayMini.textContent=p?'▶':'⏸';}
+function loadTrack(i){
+  ci=((i%playlist.length)+playlist.length)%playlist.length;
+  audio.src=playlist[ci].u;
+  const title='♪ '+playlist[ci].t;
+  mTitle.textContent=title;mTitleMini.textContent=title;
+  mFill.style.width='0%';mCur.textContent='0:00';mDur.textContent='0:00';
+  audio.play().catch(()=>{});
+  syncPlayBtn();
+}
+// Auto-skip broken tracks
+audio.addEventListener('error',()=>{
+  console.warn('Track error, skipping:',playlist[ci].t);
+  setTimeout(()=>loadTrack(ci+1),300);
+});
+audio.addEventListener('timeupdate',()=>{
+  if(audio.duration){mFill.style.width=(audio.currentTime/audio.duration*100)+'%';mCur.textContent=fmt(audio.currentTime);}
+});
+audio.addEventListener('loadedmetadata',()=>{mDur.textContent=fmt(audio.duration);});
+audio.addEventListener('ended',()=>loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci+1));
+function togglePlay(){if(audio.paused){audio.play().catch(()=>{});}else{audio.pause();}syncPlayBtn();}
+mPlay.addEventListener('click',togglePlay);
+mPlayMini.addEventListener('click',(e)=>{e.stopPropagation();togglePlay();});
+document.getElementById('mNext').addEventListener('click',()=>loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci+1));
+document.getElementById('mPrev').addEventListener('click',()=>loadTrack(ci-1));
+mShuf.addEventListener('click',()=>{shuffled=!shuffled;mShuf.classList.toggle('active',shuffled);});
+document.getElementById('mSeek').addEventListener('click',(e)=>{
+  const r=e.currentTarget.getBoundingClientRect();
+  if(audio.duration)audio.currentTime=((e.clientX-r.left)/r.width)*audio.duration;
+});
+// Volume slider
+const mVol=document.getElementById('mVol');
+mVol.addEventListener('input',()=>{audio.volume=parseFloat(mVol.value);});
+// Mini player toggle (expand/collapse)
+const musicBar=document.getElementById('music-bar');
+const musicMini=document.getElementById('music-mini');
+let playerExpanded=true;
+function setPlayerExpanded(v){
+  playerExpanded=v;
+  if(window.innerWidth<=500){
+    // On mobile: only show mini
+    musicBar.classList.remove('on');
+    musicMini.classList.toggle('on',true);
+  }else{
+    musicBar.style.display=v?'flex':'none';
+    musicMini.style.display=v?'none':'flex';
+  }
+}
+musicMini.addEventListener('click',()=>{setPlayerExpanded(true);});
+document.getElementById('music-expand').addEventListener('click',(e)=>{e.stopPropagation();setPlayerExpanded(true);});
+// Click outside player collapses it on desktop
+document.addEventListener('click',(e)=>{
+  if(!musicBar.contains(e.target)&&playerExpanded&&window.innerWidth>500){
+    // Don't collapse if clicking a game button
+    if(!e.target.closest('#pad,#actBar,.sp2'))setPlayerExpanded(false);
+  }
+});
+function startMusic(){loadTrack(0);initRainAudio();}
+
+// ════════════════════════════════════════════
+// THREE.JS
+// ════════════════════════════════════════════
+const isMob = window.innerWidth <= 768;
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:!isMob,powerPreference:'high-performance'});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(isMob ? Math.min(devicePixelRatio,1.5) : Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=0.55;
+renderer.shadowMap.enabled=false; // keep perf high
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.5,20000);
+camera.position.set(0,45,160);camera.lookAt(0,30,0);
+
+// Lights
+const amb=new THREE.AmbientLight(0x8090b0,1.3);scene.add(amb);
+const sunL=new THREE.DirectionalLight(0xfff5e0,2.5);sunL.position.set(100,200,-100);scene.add(sunL);
+const fill=new THREE.DirectionalLight(0x4080c0,0.4);fill.position.set(0,-50,0);scene.add(fill);
+
+// Leader follow light (crucial for night visibility)
+const birdLight=new THREE.PointLight(0xffd700,0,80);scene.add(birdLight);
+
+// Sky
+const sky=new Sky();sky.scale.setScalar(10000);scene.add(sky);
+const sunV=new THREE.Vector3();
+function setSky(el,az,tb,rl,mc,mg){
+  const u=sky.material.uniforms;
+  u.turbidity.value=tb;u.rayleigh.value=rl;u.mieCoefficient.value=mc;u.mieDirectionalG.value=mg;
+  const phi=THREE.MathUtils.degToRad(90-el),theta=THREE.MathUtils.degToRad(az);
+  sunV.setFromSphericalCoords(1,phi,theta);u.sunPosition.value.copy(sunV);
+  sunL.position.copy(sunV).multiplyScalar(500);
+}
+
+// Ocean — MeshStandardMaterial for realistic metallic sheen
+const oceanGeo=new THREE.PlaneGeometry(30000,30000,50,50); // 50x50 geometry exponentially lowers JS wave trig loops on CPU
+const oceanMat=new THREE.MeshStandardMaterial({
+  color:0x0077be,metalness:0.15,roughness:0.12,
+  transparent:true,opacity:0.92,
+  envMapIntensity:1.2
+});
+const ocean=new THREE.Mesh(oceanGeo,oceanMat);ocean.rotation.x=-Math.PI/2;scene.add(ocean);
+const oPosAttr=oceanGeo.attributes.position;
+// oOrigY removed since we use Local Z for height on PlaneGeometry
+
+// Fog
+scene.fog=new THREE.Fog(0x87CEEB,80,500);
+
+// Stars — 5000 stars with size variation for depth
+const stGeo=new THREE.BufferGeometry();
+const stP=[],stSizes=[];
+for(let i=0;i<5000;i++){
+  const t=Math.random()*Math.PI*2,p=Math.acos(2*Math.random()-1),r=1500+Math.random()*500;
+  stP.push(r*Math.sin(p)*Math.cos(t),Math.abs(r*Math.sin(p)*Math.sin(t)),r*Math.cos(p));
+  stSizes.push(0.8+Math.random()*2.8);
+}
+stGeo.setAttribute('position',new THREE.Float32BufferAttribute(stP,3));
+stGeo.setAttribute('size',new THREE.Float32BufferAttribute(stSizes,1));
+const stMat=new THREE.PointsMaterial({color:0xeef0ff,size:1.6,transparent:true,opacity:0,sizeAttenuation:true,vertexColors:false,fog:false});
+const stars=new THREE.Points(stGeo,stMat);scene.add(stars);
+// Shooting star data
+const shootStar={active:false,pos:new THREE.Vector3(),vel:new THREE.Vector3(),life:0};
+const ssTex=(()=>{
+  const sc=document.createElement('canvas');sc.width=64;sc.height=8;
+  const sx=sc.getContext('2d');
+  const sg=sx.createLinearGradient(0,0,64,0);
+  sg.addColorStop(0,'rgba(255,255,255,0)');sg.addColorStop(0.5,'rgba(200,220,255,0.8)');sg.addColorStop(1,'rgba(255,255,255,0)');
+  sx.fillStyle=sg;sx.fillRect(0,0,64,8);
+  return new THREE.CanvasTexture(sc);
+})();
+const ssSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:ssTex,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
+ssSprite.scale.set(80,5,1);ssSprite.frustumCulled=false;scene.add(ssSprite);
+
+// Clouds — layered, more density and variety
+const cloudGroup=new THREE.Group();scene.add(cloudGroup);
+function makeCloudTex(tint){
+  const cv=document.createElement('canvas');cv.width=512;cv.height=256;
+  const ctx=cv.getContext('2d');
+  for(let i=0;i<20;i++){
+    const x=40+Math.random()*430,y=40+Math.random()*170,rx=30+Math.random()*90,ry=18+Math.random()*45;
+    const g=ctx.createRadialGradient(x,y,0,x,y,rx);
+    const a=0.5+Math.random()*0.4;
+    g.addColorStop(0,`rgba(${tint||'255,255,255'},${a})`);g.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y,rx,ry,Math.random()*0.4,0,Math.PI*2);ctx.fill();
+  }
+  return new THREE.CanvasTexture(cv);
+}
+for(let i=0;i<50;i++){
+  const cm=new THREE.MeshBasicMaterial({map:makeCloudTex(),transparent:true,opacity:.25+Math.random()*.35,depthWrite:false,side:THREE.DoubleSide,fog:false});
+  const c=new THREE.Mesh(new THREE.PlaneGeometry(120+Math.random()*340,40+Math.random()*90),cm);
+  c.position.set((Math.random()-.5)*3000,35+Math.random()*100,(Math.random()-.5)*3000-300);
+  c.lookAt(camera.position);cloudGroup.add(c);
+}
+// Atmospheric sun-glow/god-ray sprite at horizon
+const sunGlowTex=(()=>{
+  const gc=document.createElement('canvas');gc.width=512;gc.height=512;
+  const gx=gc.getContext('2d');
+  // Radial god-ray fan
+  for(let r=0;r<12;r++){
+    const angle=r/12*Math.PI*2;
+    const rg=gx.createLinearGradient(256,256,256+Math.cos(angle)*500,256+Math.sin(angle)*500);
+    rg.addColorStop(0,'rgba(255,220,120,0.12)');rg.addColorStop(1,'rgba(255,200,80,0)');
+    gx.beginPath();gx.moveTo(256,256);
+    gx.arc(256,256,500,angle-0.12,angle+0.12);gx.closePath();
+    gx.fillStyle=rg;gx.fill();
+  }
+  // Central bright core
+  const cg=gx.createRadialGradient(256,256,0,256,256,200);
+  cg.addColorStop(0,'rgba(255,240,180,0.9)');cg.addColorStop(0.2,'rgba(255,220,100,0.4)');
+  cg.addColorStop(0.5,'rgba(255,180,60,0.15)');cg.addColorStop(1,'rgba(255,150,40,0)');
+  gx.fillStyle=cg;gx.fillRect(0,0,512,512);
+  return new THREE.CanvasTexture(gc);
+})();
+const sunGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:sunGlowTex,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
+sunGlow.scale.set(400,400,1);sunGlow.frustumCulled=false;scene.add(sunGlow);
+// Storm lightning flash
+let lightningTimer=0,lightningFlash=0;
+const stormLight=new THREE.AmbientLight(0xaabbff,0);scene.add(stormLight);
+
+// Cherry petals
+const PC=500;const petalGeo=new THREE.BufferGeometry();
+const pPos=new Float32Array(PC*3),pVel=new Float32Array(PC*3),pCol=new Float32Array(PC*3);
+for(let i=0;i<PC;i++){
+  pPos[i*3]=(Math.random()-.5)*500;pPos[i*3+1]=10+Math.random()*90;pPos[i*3+2]=(Math.random()-.5)*500;
+  pVel[i*3]=(Math.random()-.5)*.3;pVel[i*3+1]=-(0.4+Math.random()*.8);pVel[i*3+2]=(Math.random()-.5)*.3;
+  pCol[i*3]=.92+Math.random()*.08;pCol[i*3+1]=.6+Math.random()*.25;pCol[i*3+2]=.65+Math.random()*.25;
+}
+petalGeo.setAttribute('position',new THREE.BufferAttribute(pPos.slice(),3));
+petalGeo.setAttribute('color',new THREE.BufferAttribute(pCol,3));
+// Generate circular petal sprite texture
+const petalCv=document.createElement('canvas');petalCv.width=32;petalCv.height=32;
+const petalCtx=petalCv.getContext('2d');
+const petalGrad=petalCtx.createRadialGradient(16,16,0,16,16,16);
+petalGrad.addColorStop(0,'rgba(255,255,255,1)');petalGrad.addColorStop(.5,'rgba(255,255,255,.6)');petalGrad.addColorStop(1,'rgba(255,255,255,0)');
+petalCtx.fillStyle=petalGrad;petalCtx.fillRect(0,0,32,32);
+const petalTex=new THREE.CanvasTexture(petalCv);
+const pMat=new THREE.PointsMaterial({size:4,map:petalTex,vertexColors:true,transparent:true,opacity:.7,depthWrite:false,sizeAttenuation:true,blending:THREE.AdditiveBlending});
+const petals=new THREE.Points(petalGeo,pMat);scene.add(petals);
+
+// ── RAIN effect for Storm ──
+const RAIN_COUNT=2000;
+const rainGeo=new THREE.BufferGeometry();
+const rainPos=new Float32Array(RAIN_COUNT*3);
+const rainVel=new Float32Array(RAIN_COUNT);
+for(let i=0;i<RAIN_COUNT;i++){
+  rainPos[i*3]=(Math.random()-.5)*800;
+  rainPos[i*3+1]=Math.random()*600;
+  rainPos[i*3+2]=(Math.random()-.5)*800;
+  rainVel[i]=160+Math.random()*120; // fall speed
+}
+rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPos,3));
+const rainTex=(()=>{
+  const c=document.createElement('canvas');c.width=4;c.height=32;
+  const cx=c.getContext('2d');
+  cx.fillStyle='rgba(255,255,255,0.2)';cx.fillRect(1,0,2,32);
+  return new THREE.CanvasTexture(c);
+})();
+const rainMat=new THREE.PointsMaterial({map:rainTex,size:8,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,color:0x99aacc,fog:false});
+const rain=new THREE.Points(rainGeo,rainMat);scene.add(rain);
+
+// Islands
+function makeIsland(x,z,w,h){
+  const sh=new THREE.Shape();sh.moveTo(-w/2,-5);
+  for(let i=0;i<=16;i++){const t=i/16,ix=-w/2+t*w;
+    sh.lineTo(ix,Math.max(0,Math.sin(t*Math.PI)*h*(.7+.3*Math.sin(t*5))+Math.sin(t*Math.PI*3)*h*.15))}
+  sh.lineTo(w/2,-5);sh.closePath();
+  const m=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshBasicMaterial({color:0x1a2030,transparent:true,opacity:.45,side:THREE.DoubleSide}));
+  m.position.set(x,0,z);m.rotation.y=Math.atan2(x,z)+Math.PI;scene.add(m);
+}
+makeIsland(-400,0,-500,45);makeIsland(350,0,-600,60);makeIsland(-100,0,-700,35);
+
+// ════════════════════════════════════════════
+// MOODS
+// ════════════════════════════════════════════
+const MD={
+  // Day — clear blue sky, bright ocean
+  day:  {el:30,az:180,tb:2,rl:1.2,mc:.005,mg:.82,fc:0x87CEEB,fn:90,ff:600,oc:0x0077be,ex:.58,ac:0x8090b0,si:2.5,ai:1.3,bL:0,stO:0,sg:0},
+  // Dusk — rich purple-magenta twilight, sun just below horizon
+  dusk: {el:1.8,az:188,tb:5.5,rl:3.2,mc:.012,mg:.92,fc:0x4a2060,fn:35,ff:420,oc:0x1a0830,ex:.48,ac:0x7040a0,si:3.5,ai:1.5,bL:0.8,stO:0.4,sg:0.55},
+  // Night — near-black sky, deep navy ocean, strong bird glow
+  night:{el:-15,az:280,tb:30,rl:.06,mc:.0003,mg:.65,fc:0x010306,fn:10,ff:180,oc:0x010208,ex:.20,ac:0x081020,si:.05,ai:.25,bL:5,stO:1,sg:0},
+  // Storm — dark grey, heavy fog, lightning
+  storm:{el:3,az:210,tb:25,rl:5,mc:.03,mg:.97,fc:0x101518,fn:10,ff:120,oc:0x000c12,ex:.28,ac:0x1a2228,si:.5,ai:.5,bL:1.2,stO:0,sg:0},
+};
+let curM='day';
+// Dusk fill lights — magenta/pink from left, deep purple from below
+const duskFill=new THREE.DirectionalLight(0xee44aa,0);duskFill.position.set(-200,60,80);scene.add(duskFill);
+const duskFill2=new THREE.HemisphereLight(0xff6688,0x330055,0);scene.add(duskFill2);
+// Night rim light — cold blue from behind for depth
+const nightRim=new THREE.DirectionalLight(0x1133aa,0);nightRim.position.set(0,30,200);scene.add(nightRim);
+// ── Audio rain layer ──
+let rainCtx=null, rainGain=null;
+function initRainAudio(){
+  if(rainCtx)return;
+  try{
+    rainCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const bs=2*rainCtx.sampleRate;const nb=rainCtx.createBuffer(1,bs,rainCtx.sampleRate);
+    const od=nb.getChannelData(0);for(let i=0;i<bs;i++)od[i]=Math.random()*2-1;
+    const ns=rainCtx.createBufferSource();ns.buffer=nb;ns.loop=true;
+    const f=rainCtx.createBiquadFilter();f.type='lowpass';f.frequency.value=600;
+    rainGain=rainCtx.createGain();rainGain.gain.value=0;
+    ns.connect(f);f.connect(rainGain);rainGain.connect(rainCtx.destination);ns.start();
+  }catch(e){}
+}
+
+function applyM(n){
+  curM=n;const m=MD[n];
+  setSky(m.el,m.az,m.tb,m.rl,m.mc,m.mg);
+  scene.fog.color.setHex(m.fc);scene.fog.near=m.fn;scene.fog.far=m.ff;
+  renderer.toneMappingExposure=m.ex;
+  amb.color.setHex(m.ac);amb.intensity=m.ai;sunL.intensity=m.si;
+  birdLight.intensity=m.bL;
+  // Theme-specific ocean
+  oceanMat.color.setHex(m.oc);
+  oceanMat.roughness=n==='night'?0.04:n==='dusk'?0.08:0.12;
+  oceanMat.metalness=n==='night'?0.3:n==='dusk'?0.22:0.15;
+  // Fix sky black-box issue on night/storm
+  scene.background=new THREE.Color(m.fc);
+  sky.visible=(n!=='night'); // keep storm sky visible
+  
+  // Fade rain sound
+  if(rainGain) rainGain.gain.setTargetAtTime(n==='storm'?0.12:0, rainCtx.currentTime, 1.5);
+
+  // Glowing spirit birds at night
+  const leadEm = n==='night'? 1.8 : n==='dusk'? 0.5 : 0.15;
+  const baseEm = n==='night'||n==='dusk'? 0.28 : 0;
+  if (typeof lead !== 'undefined' && lead.children) {
+    lead.children.forEach(ch=>{ if(ch.material) ch.material.emissiveIntensity = leadEm; });
+  }
+  if (typeof fl !== 'undefined') {
+    fl.forEach(b=>{
+      b.children.forEach(ch=>{ if(ch.material) ch.material.emissiveIntensity = baseEm; });
+    });
+  }
+}
+// applyM moved below fl instantiation
+document.querySelectorAll('.mo').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.mo').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');applyM(b.dataset.m);
+}));
+
+// ════════════════════════════════════════════
+// BIRDS — elegant crane/swallow shape
+// ════════════════════════════════════════════
+function makeBird(col,sc,isLeader){
+  const g=new THREE.Group();
+  const mat=new THREE.MeshStandardMaterial({
+    color:col,metalness:0.1,roughness:0.55,
+    side:THREE.DoubleSide,emissive:col,emissiveIntensity:isLeader?0.15:0
+  });
+  const S=sc;
+
+  // Body — elongated diamond/fusiform
+  const bodyV=[
+    0,0,-1*S,     // nose tip
+    0,.1*S,-.2*S, // upper mid
+    0,-.06*S,-.15*S, // lower mid
+    .06*S,0,-.3*S,// right mid
+    -.06*S,0,-.3*S,// left mid
+    0,.03*S,.55*S, // tail root
+  ];
+  const bodyI=[0,1,3, 0,3,2, 0,2,4, 0,4,1, 1,5,3, 3,5,2, 2,5,4, 4,5,1];
+  const bGeo=new THREE.BufferGeometry();
+  bGeo.setAttribute('position',new THREE.Float32BufferAttribute(bodyV,3));
+  bGeo.setIndex(bodyI);bGeo.computeVertexNormals();
+  g.add(new THREE.Mesh(bGeo,mat));
+
+  // Left wing — inner segment + outer feather tip
+  const lwGroup=new THREE.Group();
+  // Inner wing
+  const liV=[0,.04*S,-.1*S, -.8*S,.12*S,-.2*S, -.25*S,.02*S,.35*S, 0,0,.2*S];
+  const liGeo=new THREE.BufferGeometry();
+  liGeo.setAttribute('position',new THREE.Float32BufferAttribute(liV,3));
+  liGeo.setIndex([0,1,2, 0,2,3, 3,2,1,0]);liGeo.computeVertexNormals();
+  lwGroup.add(new THREE.Mesh(liGeo,mat));
+  // Outer feather tip
+  const loV=[-.8*S,.12*S,-.2*S, -1.4*S,.14*S,-.1*S, -.6*S,.06*S,.15*S];
+  const loGeo=new THREE.BufferGeometry();
+  loGeo.setAttribute('position',new THREE.Float32BufferAttribute(loV,3));
+  loGeo.setIndex([0,1,2, 2,1,0]);loGeo.computeVertexNormals();
+  lwGroup.add(new THREE.Mesh(loGeo,mat));
+  g.add(lwGroup);
+
+  // Right wing — mirror
+  const rwGroup=new THREE.Group();
+  const riV=[0,.04*S,-.1*S, .8*S,.12*S,-.2*S, .25*S,.02*S,.35*S, 0,0,.2*S];
+  const riGeo=new THREE.BufferGeometry();
+  riGeo.setAttribute('position',new THREE.Float32BufferAttribute(riV,3));
+  riGeo.setIndex([0,1,2, 0,2,3, 3,2,1,0]);riGeo.computeVertexNormals();
+  rwGroup.add(new THREE.Mesh(riGeo,mat));
+  const roV=[.8*S,.12*S,-.2*S, 1.4*S,.14*S,-.1*S, .6*S,.06*S,.15*S];
+  const roGeo=new THREE.BufferGeometry();
+  roGeo.setAttribute('position',new THREE.Float32BufferAttribute(roV,3));
+  roGeo.setIndex([0,1,2, 2,1,0]);roGeo.computeVertexNormals();
+  rwGroup.add(new THREE.Mesh(roGeo,mat));
+  g.add(rwGroup);
+
+  // Forked tail feathers
+  const t1V=[0,.03*S,.5*S, -.15*S,.05*S,.9*S, 0,.01*S,.55*S];
+  const t1Geo=new THREE.BufferGeometry();
+  t1Geo.setAttribute('position',new THREE.Float32BufferAttribute(t1V,3));
+  t1Geo.setIndex([0,1,2, 2,1,0]);t1Geo.computeVertexNormals();
+  g.add(new THREE.Mesh(t1Geo,mat));
+  const t2V=[0,.03*S,.5*S, .15*S,.05*S,.9*S, 0,.01*S,.55*S];
+  const t2Geo=new THREE.BufferGeometry();
+  t2Geo.setAttribute('position',new THREE.Float32BufferAttribute(t2V,3));
+  t2Geo.setIndex([0,1,2, 2,1,0]);t2Geo.computeVertexNormals();
+  g.add(new THREE.Mesh(t2Geo,mat));
+
+  g.userData={lw:lwGroup,rw:rwGroup,ph:Math.random()*6.28,fs:2.5+Math.random()*2,mat};
+  return g;
+}
+
+const lead=makeBird(0xffd700,1.6,true);lead.position.set(0,35,0);scene.add(lead);
+const lv=new THREE.Vector3(0,0,-16);
+
+// ── LEADER AURA — glowing ring so player can always find themselves ──
+const auraTex=(()=>{
+  const c=document.createElement('canvas');c.width=128;c.height=128;
+  const x=c.getContext('2d');
+  // Outer soft glow ring
+  const g=x.createRadialGradient(64,64,18,64,64,64);
+  g.addColorStop(0,'rgba(255,215,0,0)');g.addColorStop(.35,'rgba(255,215,0,0)');
+  g.addColorStop(.5,'rgba(255,200,60,0.7)');g.addColorStop(.65,'rgba(255,180,40,0.3)');
+  g.addColorStop(1,'rgba(255,160,20,0)');
+  x.fillStyle=g;x.fillRect(0,0,128,128);
+  // Inner core glow
+  const g2=x.createRadialGradient(64,64,0,64,64,22);
+  g2.addColorStop(0,'rgba(255,240,180,0.9)');g2.addColorStop(.5,'rgba(255,215,0,0.4)');
+  g2.addColorStop(1,'rgba(255,200,60,0)');
+  x.fillStyle=g2;x.fillRect(0,0,128,128);
+  return new THREE.CanvasTexture(c);
+})();
+const leaderAura=new THREE.Sprite(new THREE.SpriteMaterial({map:auraTex,transparent:true,opacity:0.55,blending:THREE.AdditiveBlending,depthWrite:false}));
+leaderAura.scale.set(12,12,1);
+lead.add(leaderAura);
+
+// Trailing sparkle particles behind leader (replaces arrow)
+const TRAIL_COUNT=20;
+const trailTex=(()=>{
+  const c=document.createElement('canvas');c.width=32;c.height=32;
+  const x=c.getContext('2d');
+  const g=x.createRadialGradient(16,16,0,16,16,16);
+  g.addColorStop(0,'rgba(255,230,150,1)');g.addColorStop(.3,'rgba(255,210,80,0.6)');
+  g.addColorStop(.7,'rgba(200,160,60,0.15)');g.addColorStop(1,'rgba(180,140,40,0)');
+  x.fillStyle=g;x.fillRect(0,0,32,32);
+  return new THREE.CanvasTexture(c);
+})();
+const trailParticles=[];
+for(let i=0;i<TRAIL_COUNT;i++){
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:trailTex,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+  sp.scale.set(1.5,1.5,1);
+  sp.visible=false;
+  scene.add(sp);
+  trailParticles.push({sprite:sp,life:0,maxLife:0.4+Math.random()*0.3});
+}
+
+// Extra point light that follows leader with warm golden color
+const leaderGlow=new THREE.PointLight(0xffcc44,0,50);
+lead.add(leaderGlow);
+
+// ── MOON for night theme — attached relative to camera so it never gets fogged out ──
+const moonTex=(()=>{
+  const c=document.createElement('canvas');c.width=256;c.height=256;
+  const x=c.getContext('2d');
+  // Main moon body
+  const g=x.createRadialGradient(128,128,0,128,128,110);
+  g.addColorStop(0,'rgba(240,245,255,1)');g.addColorStop(.2,'rgba(225,232,250,0.95)');
+  g.addColorStop(.5,'rgba(200,210,240,0.6)');g.addColorStop(.75,'rgba(160,180,220,0.2)');
+  g.addColorStop(1,'rgba(120,150,200,0)');
+  x.fillStyle=g;x.fillRect(0,0,256,256);
+  // Craters
+  x.globalAlpha=0.1;
+  x.fillStyle='#7888a8';
+  [[100,90,14],[160,120,9],[120,150,11],[145,85,7],[95,125,8]].forEach(([cx,cy,r])=>{
+    x.beginPath();x.arc(cx,cy,r,0,Math.PI*2);x.fill();
+  });
+  // Bright highlight
+  x.globalAlpha=0.12;
+  const h=x.createRadialGradient(110,105,0,128,128,70);
+  h.addColorStop(0,'rgba(255,255,255,1)');h.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle=h;x.fillRect(0,0,256,256);
+  // Outer halo
+  x.globalAlpha=1;
+  const halo=x.createRadialGradient(128,128,80,128,128,128);
+  halo.addColorStop(0,'rgba(180,200,240,0)');halo.addColorStop(.5,'rgba(140,170,220,0.08)');
+  halo.addColorStop(.8,'rgba(100,140,200,0.04)');halo.addColorStop(1,'rgba(80,120,180,0)');
+  x.fillStyle=halo;x.fillRect(0,0,256,256);
+  return new THREE.CanvasTexture(c);
+})();
+const moon=new THREE.Sprite(new THREE.SpriteMaterial({map:moonTex,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
+moon.scale.set(80,80,1);
+moon.renderOrder=999;
+moon.frustumCulled=false;
+scene.add(moon);
+// Moon light — subtle blue directional for night
+const moonLight=new THREE.DirectionalLight(0x4466aa,0);moonLight.position.set(200,400,-100);scene.add(moonLight);
+
+// ── FIREFLIES for night theme ──
+const FF_COUNT=80;
+const ffGeo=new THREE.BufferGeometry();
+const ffPos=new Float32Array(FF_COUNT*3),ffPhase=new Float32Array(FF_COUNT);
+for(let i=0;i<FF_COUNT;i++){
+  ffPos[i*3]=(Math.random()-.5)*600;ffPos[i*3+1]=5+Math.random()*70;ffPos[i*3+2]=(Math.random()-.5)*600;
+  ffPhase[i]=Math.random()*Math.PI*2;
+}
+ffGeo.setAttribute('position',new THREE.Float32BufferAttribute(ffPos,3));
+const ffMat=new THREE.PointsMaterial({color:0xccddff,size:2.5,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true,fog:false});
+const fireflies=new THREE.Points(ffGeo,ffMat);scene.add(fireflies);
+
+// ── AURORA BOREALIS for Night Theme ──
+const auroraGroup=new THREE.Group();scene.add(auroraGroup);
+const auroraGeo=new THREE.PlaneGeometry(8000,1600,40,6);
+function makeAuTex(c1,c2,c3){
+  const c=document.createElement('canvas');c.width=512;c.height=128;
+  const cx=c.getContext('2d');
+  for(let i=0;i<512;i+=4){
+    const h=64+Math.sin(i*0.05)*30+Math.sin(i*0.01)*20;
+    const g=cx.createLinearGradient(0,128-h,0,128);
+    g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(0.3,c1);g.addColorStop(0.7,c2);g.addColorStop(1,c3);
+    cx.fillStyle=g;cx.fillRect(i,0,4,128);
+  }
+  return new THREE.CanvasTexture(c);
+}
+const auMat1=new THREE.MeshBasicMaterial({map:makeAuTex('rgba(40,255,150,0.6)','rgba(20,150,220,0.8)','rgba(0,0,0,0)'),transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false});
+const auMat2=new THREE.MeshBasicMaterial({map:makeAuTex('rgba(150,50,255,0.4)','rgba(200,80,180,0.6)','rgba(0,0,0,0)'),transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false});
+const aurora1=new THREE.Mesh(auroraGeo,auMat1);aurora1.position.set(0,300,-1500);auroraGroup.add(aurora1);
+const aurora2=new THREE.Mesh(auroraGeo,auMat2);aurora2.position.set(0,400,-1700);auroraGroup.add(aurora2);
+
+const FN=9;const fl=[]; // starts with 9 birds for a sense of meaningful progression
+// Richer plumage — warm whites, slate blues, rose golds, dusty mauve
+const plumage=[[.06,.15,.72],[.08,.12,.68],[.05,.2,.62],[.55,.08,.58],[.6,.06,.52],[.1,.1,.77],[.04,.18,.65],[.62,.1,.55],[.58,.07,.6],[.07,.16,.7]];
+for(let i=0;i<FN;i++){
+  const p=plumage[i%plumage.length];
+  const c=new THREE.Color().setHSL(p[0]+Math.random()*.04,p[1]+Math.random()*.1,p[2]+Math.random()*.12);
+  const b=makeBird(c,.65+Math.random()*.5,false);
+  b.position.set((Math.random()-.5)*80,20+Math.random()*35,(Math.random()-.5)*80);
+  b.userData.vel=new THREE.Vector3((Math.random()-.5)*2,0,-14-Math.random()*6);
+  scene.add(b);fl.push(b);
+}
+
+// Ensure first applyM is called ONLY AFTER lead and fl are defined!
+applyM('day');
+
+// ════════════════════════════════════════════
+// ENGAGEMENT SYSTEMS
+// ════════════════════════════════════════════
+
+// ── Bell synth (Web Audio) ──
+let bellCtx=null;
+function playBell(freq=660,vol=0.07){
+  try{
+    if(!bellCtx)bellCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=bellCtx.createOscillator(),g=bellCtx.createGain();
+    const o2=bellCtx.createOscillator(),g2=bellCtx.createGain();
+    o.connect(g);o2.connect(g2);g.connect(bellCtx.destination);g2.connect(bellCtx.destination);
+    o.type='sine';o2.type='sine';
+    o.frequency.setValueAtTime(freq,bellCtx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(freq*.5,bellCtx.currentTime+1.8);
+    o2.frequency.setValueAtTime(freq*2.76,bellCtx.currentTime); // bell harmonic
+    g.gain.setValueAtTime(vol,bellCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,bellCtx.currentTime+2);
+    g2.gain.setValueAtTime(vol*.5,bellCtx.currentTime);g2.gain.exponentialRampToValueAtTime(0.0001,bellCtx.currentTime+1.5);
+    o.start();o2.start();o.stop(bellCtx.currentTime+2);o2.stop(bellCtx.currentTime+2);
+  }catch(e){}
+}
+
+// ── Inspirational Quotes ──
+const haikus=[
+  `"Don't live your life making excuses. The one making your choices is yourself." — Mugen`,
+  `"Freedom is something that you have to choose to have." — Samurai Champloo`,
+  `"Even if our paths diverge, we share the same sky." — Jin`,
+  `"The journey of a thousand miles begins with one step." — Lao Tzu`,
+  `"To the mind that is still, the whole universe surrenders." — Lao Tzu`,
+  `"The wound is the place where the Light enters you." — Rumi`,
+  `"Stop acting so small. You are the universe in ecstatic motion." — Rumi`,
+  `"No mud, no lotus." — Thich Nhat Hanh`,
+  `"Flow with whatever may happen, and let your mind be free." — Zhuangzi`,
+  `"What lies behind us and what lies before us are tiny matters compared to what lies within us." — Ralph Waldo Emerson`,
+  `"Adopt the pace of nature: her secret is patience." — Ralph Waldo Emerson`,
+  `"Let the beauty of what you love be what you do." — Rumi`
+];
+let lastHaikuIdx=-1,haikuTimer=0;
+function showHaiku(){
+  let idx;do{idx=Math.floor(Math.random()*haikus.length);}while(idx===lastHaikuIdx&&haikus.length>1);
+  lastHaikuIdx=idx;
+  const el=document.getElementById('haikuOverlay');
+  el.textContent=haikus[idx];
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),4200);
+}
+
+// ── Milestone messages ──
+const milestones=[
+  {d:300,   msg:'渡り始まる · the journey begins'},
+  {d:1000,  msg:'1km · the sea opens wide'},
+  {d:2500,  msg:'2.5km · beyond the clouds'},
+  {d:5000,  msg:'5km · where wind speaks'},
+  {d:10000, msg:'10km · the endless crossing'},
+  {d:20000, msg:'20km · becoming the journey'},
+  {d:50000, msg:'50km · you are the wind'},
+];
+let mileIdx=0;
+function checkMilestone(dist){
+  if(mileIdx<milestones.length&&dist>=milestones[mileIdx].d){
+    const el=document.getElementById('milestonePop');
+    el.textContent=milestones[mileIdx].msg;
+    el.classList.add('show');
+    clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),4000);
+    mileIdx++;
+    // playBell(440,0.05); // removed entirely
+  }
+}
+
+// ── Achievement toasts ──
+const achQueue=[];let achShowing=false;
+function showAch(icon,title,desc){
+  achQueue.push({icon,title,desc});
+  if(!achShowing)flushAch();
+}
+function flushAch(){
+  if(!achQueue.length){achShowing=false;return;}
+  achShowing=true;
+  const{icon,title,desc}=achQueue.shift();
+  const el=document.getElementById('achToast');
+  el.innerHTML=`<span style="font-size:22px">${icon}</span><div><div style="font-size:11px;letter-spacing:.15em;color:#c8a66a">${title}</div><div style="font-size:9px;opacity:.5;letter-spacing:.08em;margin-top:2px">${desc}</div></div>`;
+  el.classList.add('show');
+  setTimeout(()=>{el.classList.remove('show');setTimeout(flushAch,500);},3000);
+}
+// Achievement thresholds (orbs)
+const achOrbs=[{n:1,i:'🌟',t:'First Light',d:'first orb collected'},{n:5,i:'✨',t:'Kindling',d:'5 orbs'},{n:10,i:'🌾',t:'Harvest Wind',d:'10 orbs'},{n:25,i:'🌊',t:'Sea Dancer',d:'25 orbs'},{n:50,i:'🦅',t:'Open Sky',d:'50 orbs'},{n:100,i:'🌙',t:'Moonwalker',d:'100 orbs'},{n:200,i:'⭐',t:'Starweaver',d:'200 orbs'}];
+let achOrbIdx=0;
+
+// ── Combo system ──
+let comboCount=0,lastCollectT=0,comboDecayId=null;
+function triggerCombo(t){
+  if(t-lastCollectT<4)comboCount++;else comboCount=1;
+  lastCollectT=t;
+  if(comboCount>=3){
+    const el=document.getElementById('comboDisplay');
+    el.textContent=`×${comboCount} harmony`;
+    el.classList.add('show');
+    clearTimeout(comboDecayId);
+    comboDecayId=setTimeout(()=>{el.classList.remove('show');},1800);
+  }
+}
+
+// ── Auto theme cycle ──
+const themeCycle=['day','dusk','night'];
+let autoCycleTimer=0,autoCycleEnabled=false;
+// Auto-cycle starts after 5 min of play, shifts theme every 3 min
+const AUTO_CYCLE_START=300, THEME_DURATION=180;
+let autoPlayTime=0;
+
+// ════════════════════════════════════════════
+// GOLDEN SPIRIT ORBS — 4 types for variety
+// ════════════════════════════════════════════
+// 4 orb types: gold (standard), cyan (speed boost), purple (scatter flock), white (V-formation)
+const ORB_TYPES=[
+  {color:'gold',   hex:0xffd700,glow:'rgba(255,220,60,',  freq:660,  effect:'orb'},
+  {color:'cyan',   hex:0x40e0ff,glow:'rgba(60,220,255,',  freq:880,  effect:'speed'},
+  {color:'purple', hex:0xcc88ff,glow:'rgba(180,100,255,', freq:550,  effect:'scatter'},
+  {color:'white',  hex:0xeeeeff,glow:'rgba(220,230,255,', freq:770,  effect:'vform'},
+];
+const ORB_TYPE_WEIGHTS=[0.55,0.18,0.18,0.09]; // mostly gold
+function pickOrbType(){
+  const r=Math.random();let acc=0;
+  for(let i=0;i<ORB_TYPES.length;i++){acc+=ORB_TYPE_WEIGHTS[i];if(r<acc)return i;}
+  return 0;
+}
+function makeOrbTex(type){
+  const ot=ORB_TYPES[type],c=document.createElement('canvas');c.width=96;c.height=96;
+  const x=c.getContext('2d');
+  const g=x.createRadialGradient(48,48,0,48,48,48);
+  const gw=ot.glow;
+  g.addColorStop(0,gw+'1)');g.addColorStop(.1,gw+'0.95)');g.addColorStop(.3,gw+'0.6)');
+  g.addColorStop(.55,gw+'0.2)');g.addColorStop(1,gw+'0)');
+  x.fillStyle=g;x.fillRect(0,0,96,96);
+  x.globalCompositeOperation='screen';x.globalAlpha=0.45;x.fillStyle='#ffffff';
+  x.fillRect(44,20,8,56);x.fillRect(20,44,56,8);
+  return new THREE.CanvasTexture(c);
+}
+const orbTexCache=ORB_TYPES.map((_,i)=>makeOrbTex(i));
+const ORB_COUNT=14,ORB_RANGE=250,ORB_COLLECT_R=18,ORB_MAGNET_R=55,ORB_MAGNET_STR=0.025;
+const orbs=[];
+for(let i=0;i<ORB_COUNT;i++){
+  const tp=pickOrbType();
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:orbTexCache[tp],transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false}));
+  s.userData.type=tp;
+  s.scale.set(6,6,1);
+  s.position.set((Math.random()-.5)*240,12+Math.random()*50,lead.position.z-(60+Math.random()*ORB_RANGE));
+  scene.add(s);orbs.push(s);
+}
+let orbsCollected=0,distTraveled=0,lastLeadZ=0;
+const orbCountEl=document.getElementById('orbCount');
+const distCountEl=document.getElementById('distCount');
+const collectFlash=document.getElementById('collectFlash');
+
+// ════════════════════════════════════════════
+// STEERING
+// ════════════════════════════════════════════
+const st={x:0,y:0};let form=false,spd=1;
+let zenMode=false,zenAngle=0; // Zen autopilot
+window.addEventListener('keydown',e=>{
+  switch(e.code){
+    case'ArrowLeft':st.x=-1;break;case'ArrowRight':st.x=1;break;
+    case'ArrowUp':e.preventDefault();st.y=1;break;case'ArrowDown':e.preventDefault();st.y=-1;break;
+    case'Space':e.preventDefault();form=!form;document.getElementById('btnVform').classList.toggle('on',form);break;
+    case'KeyS':fl.forEach(b=>{b.userData.vel.x+=(Math.random()-.5)*18;b.userData.vel.y+=(Math.random()-.5)*8});break;
+    case'KeyZ':e.preventDefault();
+      zenMode=!zenMode;
+      document.getElementById('btnZen').classList.toggle('zen-on',zenMode);
+      document.getElementById('zenBadge').classList.toggle('show',zenMode);
+      break;
+    case'Equal':case'NumpadAdd':spd=Math.min(3,spd+.2);break;
+    case'Minus':case'NumpadSubtract':spd=Math.max(.3,spd-.2);break;
+  }
+});
+window.addEventListener('keyup',e=>{
+  if(e.code==='ArrowLeft'&&st.x<0)st.x=0;if(e.code==='ArrowRight'&&st.x>0)st.x=0;
+  if(e.code==='ArrowUp'&&st.y>0)st.y=0;if(e.code==='ArrowDown'&&st.y<0)st.y=0;
+});
+document.querySelectorAll('.db').forEach(b=>{
+  const d=b.dataset.d;
+  const s2=()=>{if(d==='left')st.x=-1;if(d==='right')st.x=1;if(d==='up')st.y=1;if(d==='down')st.y=-1};
+  const c2=()=>{if(d==='left'||d==='right')st.x=0;if(d==='up'||d==='down')st.y=0};
+  b.addEventListener('pointerdown',s2);b.addEventListener('pointerup',c2);b.addEventListener('pointerleave',c2);
+});
+document.getElementById('su').onclick=()=>{spd=Math.min(3,spd+.2)};
+document.getElementById('sd').onclick=()=>{spd=Math.max(.3,spd-.2)};
+// Mobile action buttons — Scatter, V-Form, Zen
+const btnVform=document.getElementById('btnVform');
+document.getElementById('btnScatter').addEventListener('click',()=>{
+  fl.forEach(b=>{b.userData.vel.x+=(Math.random()-.5)*18;b.userData.vel.y+=(Math.random()-.5)*8});
+});
+btnVform.addEventListener('click',()=>{
+  form=!form;
+  btnVform.classList.toggle('on',form);
+});
+const btnZen=document.getElementById('btnZen');
+btnZen.addEventListener('click',()=>{
+  zenMode=!zenMode;
+  btnZen.classList.toggle('zen-on',zenMode);
+  document.getElementById('zenBadge').classList.toggle('show',zenMode);
+});
+
+// ════════════════════════════════════════════
+// RENDER LOOP
+// ════════════════════════════════════════════
+const clock=new THREE.Clock(false);let started=false;
+
+function tick(){
+  requestAnimationFrame(tick);
+  const dt=Math.min(clock.getDelta(),.05);
+  const t=clock.getElapsedTime();
+
+  // Ocean waves
+  const sw=curM==='storm'?3.5:1;
+  for(let i=0;i<oPosAttr.count;i++){
+    const x=oPosAttr.getX(i),y=oPosAttr.getY(i); // Local Y maps to World -Z
+    oPosAttr.setZ(i,(Math.sin(x*.018+t*.7)*.6+Math.sin(y*.013+t*.55)*.4+Math.sin((x+y)*.009+t*1.1)*.25+Math.sin(x*.04+t*1.5)*.1)*sw);
+  }
+  oPosAttr.needsUpdate=true;oceanGeo.computeVertexNormals();
+
+  // Stars — twinkle by slightly modulating size
+  const targetStarOp=MD[curM].stO;
+  stMat.opacity+=(targetStarOp-stMat.opacity)*dt*2;
+  stMat.size=1.6+Math.sin(t*1.3)*0.3;
+  stars.rotation.y+=.00004;
+  
+  // Keep celestial objects centered on camera so they are infinitely far away
+  sky.position.copy(camera.position);
+  stars.position.copy(camera.position);
+  if(aurora1 && aurora2) {
+    aurora1.position.z = camera.position.z - 1500;
+    aurora2.position.z = camera.position.z - 1550;
+    aurora1.position.x = aurora2.position.x = camera.position.x;
+  }
+  // Shooting star — random chance in night mode
+  if(curM==='night'&&!shootStar.active&&Math.random()<dt*0.08){
+    shootStar.active=true;shootStar.life=0.8+Math.random()*0.6;
+    shootStar.pos.set(camera.position.x+(Math.random()-.5)*800,camera.position.y+100+Math.random()*200,camera.position.z-300-Math.random()*200);
+    shootStar.vel.set((Math.random()-.5)*600,-100-Math.random()*200,(Math.random()-.5)*100);
+    ssSprite.material.opacity=0.9;ssSprite.visible=true;
+  }
+  if(shootStar.active){
+    shootStar.life-=dt;
+    shootStar.pos.addScaledVector(shootStar.vel,dt);
+    ssSprite.position.copy(shootStar.pos);
+    ssSprite.material.opacity=Math.max(0,shootStar.life/1.2*0.9);
+    if(shootStar.life<=0){shootStar.active=false;ssSprite.visible=false;}
+  }
+
+  // Moon — camera-relative, always in upper-right sky
+  const moonTarget=curM==='night'?0.9:0;
+  moon.material.opacity+=(moonTarget-moon.material.opacity)*dt*2;
+  const mlTarget=curM==='night'?0.6:0; 
+  moonLight.intensity+=(mlTarget-moonLight.intensity)*dt*2;
+  moon.position.set(
+    camera.position.x+240+Math.sin(t*0.005)*8,
+    camera.position.y+200+Math.sin(t*0.007)*4,
+    camera.position.z-340
+  );
+
+  // Layered Aurora Animation
+  const auTarget=curM==='night'?0.45:0;
+  auMat1.opacity+=(auTarget-auMat1.opacity)*dt*0.8;
+  auMat2.opacity+=((auTarget*0.7)-auMat2.opacity)*dt*0.8;
+  if(auMat1.opacity>0.01){
+    const ap1=aurora1.geometry.attributes.position.array;
+    const ap2=aurora2.geometry.attributes.position.array;
+    for(let i=0;i<ap1.length;i+=3){
+      ap1[i+1]=Math.sin(ap1[i]*0.0015+t*0.4)*160+Math.sin(ap1[i]*0.004+t*0.9)*70;
+      ap2[i+1]=Math.sin(ap2[i]*0.0012-t*0.3)*180+Math.sin(ap2[i]*0.003-t*0.5)*90;
+    }
+    aurora1.geometry.attributes.position.needsUpdate=true;
+    aurora2.geometry.attributes.position.needsUpdate=true;
+  }
+
+  // Rain dynamics
+  const rTarget=curM==='storm'?0.7:0;
+  rainMat.opacity+=(rTarget-rainMat.opacity)*dt*2;
+  if(rainMat.opacity>0.01){
+    const rp=rain.geometry.attributes.position.array;
+    for(let i=0;i<RAIN_COUNT;i++){
+      rp[i*3+1]-=rainVel[i]*dt; // fall y
+      rp[i*3]-=50*dt; // wind blown x
+      if(rp[i*3+1]<0){
+        rp[i*3+1]=600+Math.random()*100;
+        rp[i*3]=camera.position.x+(Math.random()-.5)*800+200; // spawn ahead of wind
+        rp[i*3+2]=camera.position.z-300+(Math.random()-.5)*600;
+      }
+    }
+    rain.geometry.attributes.position.needsUpdate=true;
+  }
+  // Sun glow sprite — tracks sun position for dusk
+  const sgTarget=MD[curM].sg;
+  sunGlow.material.opacity+=(sgTarget-sunGlow.material.opacity)*dt*1.5;
+  if(sgTarget>0.01){
+    // Position sun glow at horizon
+    const sgDir=new THREE.Vector3().copy(sunV).normalize();
+    sunGlow.position.set(
+      camera.position.x+sgDir.x*500,
+      camera.position.y+Math.max(-30,sgDir.y*300)+10,
+      camera.position.z+sgDir.z*-200
+    );
+  }
+
+  // Fireflies — only at night, bounded so they don't drift away
+  const ffTarget=curM==='night'?0.75:0;
+  ffMat.opacity+=(ffTarget-ffMat.opacity)*dt*2;
+  if(ffMat.opacity>0.01){
+    const fp=fireflies.geometry.attributes.position;
+    for(let i=0;i<FF_COUNT;i++){
+      fp.array[i*3]+=Math.sin(t*0.3+ffPhase[i])*0.1;
+      fp.array[i*3+1]+=Math.cos(t*0.4+ffPhase[i]*2)*0.05;
+      fp.array[i*3+2]+=Math.cos(t*0.25+ffPhase[i])*0.08;
+      // Soft bounds — wrap around leader
+      const ffDx=fp.array[i*3]-lead.position.x;
+      const ffDz=fp.array[i*3+2]-lead.position.z;
+      if(Math.abs(ffDx)>300)fp.array[i*3]=lead.position.x+(Math.random()-.5)*200;
+      if(fp.array[i*3+1]<1||fp.array[i*3+1]>75)fp.array[i*3+1]=5+Math.random()*55;
+      if(Math.abs(ffDz)>300)fp.array[i*3+2]=lead.position.z+(Math.random()-.5)*200;
+    }
+    fp.needsUpdate=true;
+  }
+  // Storm lightning
+  if(curM==='storm'){
+    lightningTimer-=dt;
+    if(lightningTimer<=0){
+      lightningTimer=2+Math.random()*5;
+      lightningFlash=0.4+Math.random()*0.5;
+    }
+    lightningFlash*=Math.pow(0.001,dt); // fast decay
+    stormLight.intensity=lightningFlash;
+  }else{
+    stormLight.intensity*=Math.pow(0.01,dt);
+  }
+
+  // Leader aura pulse
+  const auraPulse=0.35+Math.sin(t*2)*0.12;
+  leaderAura.material.opacity=auraPulse;
+  leaderAura.scale.setScalar(9+Math.sin(t*1.5)*1.5);
+  // Trailing sparkle particles
+  if(started){
+    const trailSpawnRate=0.12; // spawn one every ~0.12s
+    for(let i=0;i<TRAIL_COUNT;i++){
+      const tp=trailParticles[i];
+      if(tp.life<=0){
+        if(Math.random()<dt/trailSpawnRate){
+          tp.life=tp.maxLife;
+          tp.sprite.visible=true;
+          tp.sprite.position.copy(lead.position);
+          tp.sprite.position.x+=(Math.random()-.5)*3;
+          tp.sprite.position.y+=(Math.random()-.5)*2;
+          tp.sprite.position.z+=2+Math.random()*3;
+          tp.sprite.scale.setScalar(1.2+Math.random()*1.5);
+        }
+      }else{
+        tp.life-=dt;
+        const frac=tp.life/tp.maxLife;
+        tp.sprite.material.opacity=frac*0.45;
+        tp.sprite.scale.setScalar(tp.sprite.scale.x*0.97);
+        tp.sprite.position.y+=dt*1.5;
+        tp.sprite.position.z+=dt*8;
+        if(tp.life<=0){tp.sprite.visible=false;}
+      }
+    }
+  }
+  // Leader glow intensity changes by mood
+  leaderGlow.intensity=curM==='night'?2.5:curM==='dusk'?1.2:0.6;
+
+  // Petals
+  const tpo=curM==='day'?.7:curM==='dusk'?.5:curM==='storm'?0:.2;
+  pMat.opacity+=(tpo-pMat.opacity)*dt*1.5;
+  if(pMat.opacity>.01){
+    const pp=petals.geometry.attributes.position;
+    for(let i=0;i<PC;i++){
+      pp.array[i*3]+=pVel[i*3]*dt*4+Math.sin(t+i)*.02;
+      pp.array[i*3+1]+=pVel[i*3+1]*dt*3;
+      pp.array[i*3+2]+=pVel[i*3+2]*dt*4+Math.cos(t*.7+i)*.02;
+      if(pp.array[i*3+1]<-2){pp.array[i*3+1]=90+Math.random()*20;pp.array[i*3]=(Math.random()-.5)*500;pp.array[i*3+2]=(Math.random()-.5)*500}
+    }
+    pp.needsUpdate=true;
+  }
+
+  // Clouds — drift and billboard toward camera
+  const tco=curM==='night'?.35:curM==='storm'?.65:.55; // restored cloud opacity
+  cloudGroup.children.forEach(c=>{
+    c.material.opacity+=(tco-c.material.opacity)*dt;
+    c.position.x+=.35*dt*(curM==='storm'?3:1);
+    if(c.position.x>1500)c.position.x=-1500;
+    c.lookAt(camera.position); // billboard
+  });
+
+  // (Dynamic emissive updates moved to applyM)
+
+  if(!started){renderer.render(scene,camera);return}
+
+  // ── Leader ──
+  // Zen autopilot — gently steers with sinusoidal curves
+  if(zenMode){
+    zenAngle+=dt*0.22;
+    st.x=Math.sin(zenAngle)*0.55;
+    st.y=Math.sin(zenAngle*0.6)*0.2;
+  }
+  const tr=1.4*spd;
+  lv.x+=st.x*tr*dt*60;lv.y+=st.y*tr*.7*dt*60;
+  lv.x*=.94;lv.y*=.94;lv.z=-20*spd;
+  if(lead.position.y+lv.y*dt<4)lv.y=Math.max(lv.y,.4);
+  if(lead.position.y+lv.y*dt>85)lv.y=Math.min(lv.y,-.3);
+  lead.position.addScaledVector(lv,dt);
+  lead.lookAt(lead.position.x+lv.x,lead.position.y+lv.y,lead.position.z+lv.z);
+  lead.rotateZ(-st.x*.3);
+  lead.userData.ph+=dt*lead.userData.fs;
+  const lfl=Math.sin(lead.userData.ph)*.5;
+  lead.userData.lw.rotation.z=lfl;lead.userData.rw.rotation.z=-lfl;
+
+  // Update bird follow light position
+  birdLight.position.copy(lead.position);
+  birdLight.position.y+=3;
+
+  // ── Orb collection + distance ──
+  distTraveled+=Math.abs(lead.position.z-lastLeadZ);lastLeadZ=lead.position.z;
+  distCountEl.textContent=Math.floor(distTraveled);
+  for(let i=0;i<ORB_COUNT;i++){
+    const o=orbs[i];
+    // Pulse glow
+    o.material.opacity=.55+Math.sin(t*2+i*1.3)*.3;
+    o.scale.setScalar(5.5+Math.sin(t*1.5+i)*1.2);
+    // Gentle magnetism — orbs drift toward leader when nearby (not instant, just a nudge)
+    const odx=lead.position.x-o.position.x,ody=lead.position.y-o.position.y,odz=lead.position.z-o.position.z;
+    const od=Math.sqrt(odx*odx+ody*ody+odz*odz);
+    if(od<ORB_MAGNET_R&&od>ORB_COLLECT_R){
+      const pull=ORB_MAGNET_STR*(1-od/ORB_MAGNET_R); // stronger when closer
+      o.position.x+=odx*pull;
+      o.position.y+=ody*pull;
+      o.position.z+=odz*pull;
+      // Brighten when being attracted
+      o.material.opacity=Math.min(1,.7+Math.sin(t*4+i)*0.2);
+      o.scale.setScalar(6.5+Math.sin(t*2+i)*1.5);
+    }
+    // Check collection
+    if(od<ORB_COLLECT_R){
+      orbsCollected++;orbCountEl.textContent=orbsCollected;
+      collectFlash.style.opacity='1';setTimeout(()=>collectFlash.style.opacity='0',150);
+
+      // Orb type effects
+      const ot=ORB_TYPES[o.userData.type];
+      triggerCombo(t);
+      // Haiku every 3rd orb
+      if(orbsCollected%3===0)showHaiku();
+      // Achievement check
+      if(achOrbIdx<achOrbs.length&&orbsCollected>=achOrbs[achOrbIdx].n){
+        const a=achOrbs[achOrbIdx++];
+        showAch(a.i,a.t,a.d);
+      }
+      // Type-specific effect
+      if(ot.effect==='speed'){
+        spd=Math.min(3,spd+0.35);
+        setTimeout(()=>{spd=Math.max(1,spd-0.35);},5000);
+      }else if(ot.effect==='scatter'){
+        fl.forEach(b=>{b.userData.vel.x+=(Math.random()-.5)*14;b.userData.vel.y+=(Math.random()-.5)*6;});
+      }else if(ot.effect==='vform'){
+        form=true;document.getElementById('btnVform').classList.add('on');
+        setTimeout(()=>{form=false;document.getElementById('btnVform').classList.remove('on');},8000);
+      }
+      // Flock grows every 3 orbs (max 120 birds)
+      if(orbsCollected%3===0&&fl.length<120){
+        const p=plumage[fl.length%plumage.length];
+        const nc=new THREE.Color().setHSL(p[0]+Math.random()*.04,p[1]+Math.random()*.1,p[2]+Math.random()*.12);
+        const nb=makeBird(nc,.65+Math.random()*.5,false);
+        nb.position.set(lead.position.x+(Math.random()-.5)*60,lead.position.y+Math.random()*20,lead.position.z+(Math.random()-.5)*60);
+        nb.userData.vel=new THREE.Vector3((Math.random()-.5)*2,0,-14-Math.random()*6);
+        scene.add(nb);fl.push(nb);
+        showAch('🐦',`Flock grows!`,`now ${fl.length} birds`);
+      }
+      // Respawn orb with random type
+      const newType=pickOrbType();
+      o.userData.type=newType;
+      o.material.map=orbTexCache[newType];
+      o.material.needsUpdate=true;
+      o.position.set(lead.position.x+(Math.random()-.5)*160,12+Math.random()*50,lead.position.z-(120+Math.random()*ORB_RANGE));
+    }
+    // Keep orbs that are passed behind respawning ahead
+    if(o.position.z>lead.position.z+60){
+      const newType=pickOrbType();
+      o.userData.type=newType;
+      o.material.map=orbTexCache[newType];
+      o.material.needsUpdate=true;
+      o.position.set(lead.position.x+(Math.random()-.5)*180,12+Math.random()*50,lead.position.z-(80+Math.random()*ORB_RANGE));
+    }
+  }
+
+  // Infinite World Wrap: Teleport back perfectly to keep player centered in ocean boundaries
+  if(lead.position.z < -4000){
+    const J = 4000;
+    lead.position.z += J;
+    lastLeadZ += J;
+    camera.position.z += J;
+    fl.forEach(b => b.position.z += J);
+    orbs.forEach(o => o.position.z += J);
+    if(shootStar && shootStar.active) shootStar.pos.z += J;
+    cloudGroup.children.forEach(c => {
+      c.position.z += J;
+      if(c.position.z > camera.position.z + 1000) c.position.z -= 3000;
+    });
+    if (ffMat.opacity > 0.01) {
+      const fp = fireflies.geometry.attributes.position.array;
+      for(let i=0;i<FF_COUNT;i++) fp[i*3+2] += J;
+      fireflies.geometry.attributes.position.needsUpdate = true;
+    }
+  }
+
+  // Distance milestones
+  checkMilestone(distTraveled);
+  // Auto theme cycle (kicks in after 5min play, shifts every 3min)
+  autoPlayTime+=dt;
+  if(autoPlayTime>AUTO_CYCLE_START){
+    autoCycleTimer+=dt;
+    if(autoCycleTimer>=THEME_DURATION){
+      autoCycleTimer=0;
+      const modes=Object.keys(MD);
+      const ci2=modes.indexOf(curM);
+      const next=modes[(ci2+1)%modes.length];
+      applyM(next);
+      document.querySelectorAll('.mo').forEach(b=>b.classList.toggle('on',b.dataset.m===next));
+    }
+  }
+
+  // ── Flock — STRONGER cohesion, always returns ──
+  const lp=lead.position;
+  for(let i=0;i<FN;i++){
+    const b=fl[i],v=b.userData.vel,p=b.position;
+
+    // Distance to leader
+    const dx=lp.x-p.x, dy=lp.y-p.y, dz=(lp.z+20)-p.z; // target slightly behind leader
+    const dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
+
+    if(form){
+      const row=Math.floor((i+1)/2),side=(i%2===0)?1:-1;
+      v.x+=(lp.x+side*row*5.5-p.x)*.1;v.y+=(lp.y-row*1.2-p.y)*.1;v.z+=(lp.z+row*7-p.z)*.1;
+    }else{
+      // Cohesion scales UP the further away bird is — they ALWAYS return
+      const cohesionStrength=dist>80?.15:dist>40?.04:.012;
+      v.x+=dx*cohesionStrength;
+      v.y+=dy*cohesionStrength;
+      v.z+=dz*cohesionStrength;
+
+      // Gentle wander
+      v.x+=Math.sin(t*.25+i*1.7)*.04;
+      v.y+=Math.cos(t*.2+i*2.3)*.02;
+    }
+
+    // Separation
+    for(let j=0;j<FN;j++){
+      if(i===j)continue;
+      const sx=p.x-fl[j].position.x,sy=p.y-fl[j].position.y,sz=p.z-fl[j].position.z;
+      const d2=sx*sx+sy*sy+sz*sz;
+      if(d2<49&&d2>.01){const f=1/d2;v.x+=sx*f*.5;v.y+=sy*f*.5;v.z+=sz*f*.5}
+    }
+
+    // Match leader speed
+    v.z+=(lv.z-v.z)*.03;
+    v.x*=.97;v.y*=.97;
+
+    // Speed limits
+    const sp=Math.sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
+    if(sp>35){const s=35/sp;v.x*=s;v.y*=s;v.z*=s}
+    if(sp<6){const s=6/sp;v.x*=s;v.y*=s;v.z*=s}
+    if(p.y<3)v.y+=.4;if(p.y>90)v.y-=.3;
+
+    p.addScaledVector(v,dt);
+    if(sp>.5)b.lookAt(p.x+v.x,p.y+v.y,p.z+v.z);
+    b.userData.ph+=dt*b.userData.fs;
+    const ff=Math.sin(b.userData.ph)*.4;
+    b.userData.lw.rotation.z=ff;b.userData.rw.rotation.z=-ff;
+  }
+
+  // Camera — cinematic follow with gentle bob
+  const ic=new THREE.Vector3(lead.position.x-lv.x*.35,lead.position.y+12,lead.position.z+48);
+  camera.position.lerp(ic,dt*3.2);
+  // Subtle breathing bob and lateral sway
+  camera.position.y+=Math.sin(t*.18)*0.18;
+  camera.position.x+=Math.sin(t*.07)*0.06;
+  camera.lookAt(new THREE.Vector3(lead.position.x+lv.x*0.3,lead.position.y+1,lead.position.z-60));
+
+  renderer.render(scene,camera);
+}
+
+// ── START ──
+document.getElementById('go').addEventListener('click',()=>{
+  document.getElementById('intro').classList.add('out');
+  setTimeout(()=>document.getElementById('intro').style.display='none',300);
+  document.getElementById('hud').classList.add('on');
+  document.getElementById('statsBar').style.display='flex';
+  document.getElementById('actBar').style.display='flex';
+  // Show correct music player view based on screen size
+  if(window.innerWidth<=500){
+    document.getElementById('music-mini').classList.add('on');
+  }else{
+    document.getElementById('music-bar').classList.add('on');
+  }
+  clock.start();started=true;
+  startMusic();
+});
+
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+tick();
+</script>
+</body>
+</html>
