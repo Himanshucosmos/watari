@@ -13,7 +13,7 @@
 
     /* ─── Intro Redesign ─── */
     #intro { position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; background: radial-gradient(circle at center, rgba(8,6,16,0.3) 0%, rgba(4,3,8,0.9) 100%); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); transition:opacity 0.3s ease; overflow:hidden; }
-    #intro.out { opacity:0; pointer-events:none; }
+    #intro.out { opacity:0; pointer-events:none; display:none!important }
     
     .intro-bg-kanji { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:55vh; color:#c8a66a; opacity:0.03; white-space:nowrap; pointer-events:none; font-weight:bold; animation: driftKanji 40s linear infinite; }
     @keyframes driftKanji { 0% { transform: translate(-55%, -50%); } 50% { transform: translate(-45%, -50%); } 100% { transform: translate(-55%, -50%); } }
@@ -215,6 +215,7 @@
   <button class="m-btn play" id="mPlayMini" style="width:34px;height:34px;font-size:14px">▶</button>
   <button class="m-btn" id="mNextMini" style="width:28px;height:28px;font-size:12px;margin-left:2px">⏭</button>
   <span class="mm-title" id="mTitleMini" style="margin-left:6px">♪ —</span>
+  <span id="music-expand" style="font-size:11px;opacity:.35;margin-left:8px;cursor:pointer">↗</span>
 </div>
 <!-- Haiku / Milestone / Combo overlays -->
 <div id="haikuOverlay"></div>
@@ -252,6 +253,48 @@
 <script type="module">
 import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
+
+// ── GLOBAL STATE ──
+window.gameStarted = false;
+
+function initSimulation(){
+  if(window.gameStarted) return;
+  window.gameStarted=true;
+
+  const intro = document.getElementById('intro');
+  if(intro) {
+    intro.style.opacity = '0';
+    intro.style.pointerEvents = 'none';
+    setTimeout(() => { intro.style.display = 'none'; }, 450);
+  }
+
+  const hud = document.getElementById('hud');
+  if(hud) hud.classList.add('on');
+  
+  const stats = document.getElementById('statsBar');
+  if(stats) stats.style.display='flex';
+  
+  const act = document.getElementById('actBar');
+  if(act) act.style.display='flex';
+
+  if(window.innerWidth<=500){
+    const mini = document.getElementById('music-mini');
+    if(mini) mini.classList.add('on');
+  }else{
+    const bar = document.getElementById('music-bar');
+    if(bar) bar.classList.add('on');
+  }
+
+  if(typeof clock !== 'undefined' && !clock.running) clock.start();
+  startMusic();
+}
+
+// ── BINDING ──
+const startBtn = document.getElementById('go');
+if(startBtn){
+  startBtn.onclick = (e) => { e.preventDefault(); initSimulation(); };
+  startBtn.ontouchstart = (e) => { e.preventDefault(); initSimulation(); };
+}
 
 // ════════════════════════════════════════════
 // MUSIC — 19 verified CDN tracks (Fisher-Yates shuffled on load)
@@ -366,19 +409,24 @@ audio.addEventListener('error',()=>{
   setTimeout(()=>loadTrack(ci+1),300);
 });
 audio.addEventListener('timeupdate',()=>{
-  if(audio.duration){mFill.style.width=(audio.currentTime/audio.duration*100)+'%';mCur.textContent=fmt(audio.currentTime);}
+  if(audio.duration && mFill){mFill.style.width=(audio.currentTime/audio.duration*100)+'%';if(mCur)mCur.textContent=fmt(audio.currentTime);}
 });
-audio.addEventListener('loadedmetadata',()=>{mDur.textContent=fmt(audio.duration);});
+audio.addEventListener('loadedmetadata',()=>{if(mDur)mDur.textContent=fmt(audio.duration);});
 audio.addEventListener('ended',()=>loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci+1));
 function togglePlay(){if(audio.paused){audio.play().catch(()=>{});}else{audio.pause();}syncPlayBtn();}
-mPlay.addEventListener('click',togglePlay);
-mPlayMini.addEventListener('click',(e)=>{e.stopPropagation();togglePlay();});
-document.getElementById('mPrevMini').addEventListener('click',(e)=>{e.stopPropagation();loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci-1);});
-document.getElementById('mNextMini').addEventListener('click',(e)=>{e.stopPropagation();loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci+1);});
-document.getElementById('mNext').addEventListener('click',()=>loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci+1));
-document.getElementById('mPrev').addEventListener('click',()=>loadTrack(ci-1));
-mShuf.addEventListener('click',()=>{shuffled=!shuffled;mShuf.classList.toggle('active',shuffled);});
-document.getElementById('mSeek').addEventListener('click',(e)=>{
+if(mPlay)mPlay.addEventListener('click',togglePlay);
+if(mPlayMini)mPlayMini.addEventListener('click',(e)=>{e.stopPropagation();togglePlay();});
+const mPrevMini=document.getElementById('mPrevMini');
+if(mPrevMini) mPrevMini.addEventListener('click',(e)=>{e.stopPropagation();loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci-1);});
+const mNextMini=document.getElementById('mNextMini');
+if(mNextMini) mNextMini.addEventListener('click',(e)=>{e.stopPropagation();loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci+1);});
+const mPrev=document.getElementById('mPrev');
+if(mPrev) mPrev.addEventListener('click',()=>loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci-1));
+const mNext=document.getElementById('mNext');
+if(mNext) mNext.addEventListener('click',()=>loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci+1));
+if(mShuf)mShuf.addEventListener('click',()=>{shuffled=!shuffled;mShuf.classList.toggle('active',shuffled);});
+const mSeek=document.getElementById('mSeek');
+if(mSeek)mSeek.addEventListener('click',(e)=>{
   const r=e.currentTarget.getBoundingClientRect();
   if(audio.duration)audio.currentTime=((e.clientX-r.left)/r.width)*audio.duration;
 });
@@ -401,7 +449,8 @@ function setPlayerExpanded(v){
   }
 }
 musicMini.addEventListener('click',()=>{setPlayerExpanded(true);});
-document.getElementById('music-expand').addEventListener('click',(e)=>{e.stopPropagation();setPlayerExpanded(true);});
+const mExp=document.getElementById('music-expand');
+if(mExp)mExp.addEventListener('click',(e)=>{e.stopPropagation();setPlayerExpanded(true);});
 // Click outside player collapses it on desktop
 document.addEventListener('click',(e)=>{
   if(!musicBar.contains(e.target)&&playerExpanded&&window.innerWidth>500){
@@ -1060,7 +1109,12 @@ btnZen.addEventListener('click',()=>{
 // ════════════════════════════════════════════
 // RENDER LOOP
 // ════════════════════════════════════════════
-const clock=new THREE.Clock(false);let started=false;
+const clock=new THREE.Clock(false);
+window.gameStarted=false;
+window.addEventListener('watari-start', () => {
+  if(clock && !clock.running) clock.start();
+  startMusic();
+});
 
 function tick(){
   requestAnimationFrame(tick);
@@ -1195,7 +1249,7 @@ function tick(){
   leaderAura.material.opacity=auraPulse;
   leaderAura.scale.setScalar(9+Math.sin(t*1.5)*1.5);
   // Trailing sparkle particles
-  if(started){
+  if(window.gameStarted){
     const trailSpawnRate=0.12; // spawn one every ~0.12s
     for(let i=0;i<TRAIL_COUNT;i++){
       const tp=trailParticles[i];
@@ -1248,7 +1302,7 @@ function tick(){
 
   // (Dynamic emissive updates moved to applyM)
 
-  if(!started){renderer.render(scene,camera);return}
+  if(!window.gameStarted){renderer.render(scene,camera);return}
 
   // ── Leader ──
   // Zen autopilot — gently steers with sinusoidal curves
@@ -1441,22 +1495,7 @@ function tick(){
   renderer.render(scene,camera);
 }
 
-// ── START ──
-document.getElementById('go').addEventListener('click',()=>{
-  document.getElementById('intro').classList.add('out');
-  setTimeout(()=>document.getElementById('intro').style.display='none',300);
-  document.getElementById('hud').classList.add('on');
-  document.getElementById('statsBar').style.display='flex';
-  document.getElementById('actBar').style.display='flex';
-  // Show correct music player view based on screen size
-  if(window.innerWidth<=500){
-    document.getElementById('music-mini').classList.add('on');
-  }else{
-    document.getElementById('music-bar').classList.add('on');
-  }
-  clock.start();started=true;
-  startMusic();
-});
+// (Start Logic moved to top of script)
 
 window.addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
