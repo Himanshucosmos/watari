@@ -210,10 +210,11 @@
   <div class="m-vol"><span class="m-vol-label">🔈</span><input type="range" id="mVol" min="0" max="1" step="0.05" value="0.7"></div>
 </div>
 <!-- Mini music player (mobile collapsed state) -->
-<div id="music-mini" class="g">
-  <button class="m-btn play" id="mPlayMini" style="width:32px;height:32px;font-size:14px">▶</button>
-  <span class="mm-title" id="mTitleMini">♪ —</span>
-  <span id="music-expand" style="font-size:11px;opacity:.35;margin-left:8px">↗</span>
+<div id="music-mini" class="g" style="align-items:center;">
+  <button class="m-btn" id="mPrevMini" style="width:28px;height:28px;font-size:12px;margin-right:2px">⏮</button>
+  <button class="m-btn play" id="mPlayMini" style="width:34px;height:34px;font-size:14px">▶</button>
+  <button class="m-btn" id="mNextMini" style="width:28px;height:28px;font-size:12px;margin-left:2px">⏭</button>
+  <span class="mm-title" id="mTitleMini" style="margin-left:6px">♪ —</span>
 </div>
 <!-- Haiku / Milestone / Combo overlays -->
 <div id="haikuOverlay"></div>
@@ -372,6 +373,8 @@ audio.addEventListener('ended',()=>loadTrack(shuffled?Math.floor(Math.random()*p
 function togglePlay(){if(audio.paused){audio.play().catch(()=>{});}else{audio.pause();}syncPlayBtn();}
 mPlay.addEventListener('click',togglePlay);
 mPlayMini.addEventListener('click',(e)=>{e.stopPropagation();togglePlay();});
+document.getElementById('mPrevMini').addEventListener('click',(e)=>{e.stopPropagation();loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci-1);});
+document.getElementById('mNextMini').addEventListener('click',(e)=>{e.stopPropagation();loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci+1);});
 document.getElementById('mNext').addEventListener('click',()=>loadTrack(shuffled?Math.floor(Math.random()*playlist.length):ci+1));
 document.getElementById('mPrev').addEventListener('click',()=>loadTrack(ci-1));
 mShuf.addEventListener('click',()=>{shuffled=!shuffled;mShuf.classList.toggle('active',shuffled);});
