@@ -1338,14 +1338,14 @@ function tick(){
     // Gentle magnetism — orbs drift toward leader when nearby (not instant, just a nudge)
     const odx=lead.position.x-o.position.x,ody=lead.position.y-o.position.y,odz=lead.position.z-o.position.z;
     const od=Math.sqrt(odx*odx+ody*ody+odz*odz);
-    if(od<ORB_MAGNET_R&&od>ORB_COLLECT_R){
-      const pull=ORB_MAGNET_STR*(1-od/ORB_MAGNET_R); // stronger when closer
+    if(od<70&&od>ORB_COLLECT_R){
+      const pull=1.8*dt*(1-od/70); // snappy magnetism scaled by time
       o.position.x+=odx*pull;
       o.position.y+=ody*pull;
       o.position.z+=odz*pull;
-      // Brighten when being attracted
-      o.material.opacity=Math.min(1,.7+Math.sin(t*4+i)*0.2);
-      o.scale.setScalar(6.5+Math.sin(t*2+i)*1.5);
+      // Brighten and expand when being attracted
+      o.material.opacity=Math.min(1,.75+Math.sin(t*4+i)*0.25);
+      o.scale.setScalar(7.5+Math.sin(t*2+i)*1.5);
     }
     // Check collection
     if(od<ORB_COLLECT_R){
@@ -1390,7 +1390,7 @@ function tick(){
       o.position.set(lead.position.x+(Math.random()-.5)*160,12+Math.random()*50,lead.position.z-(120+Math.random()*ORB_RANGE));
     }
     // Keep orbs that are passed behind respawning ahead
-    if(o.position.z>lead.position.z+60){
+    if(o.position.z>lead.position.z+35){
       const newType=pickOrbType();
       o.userData.type=newType;
       o.material.map=orbTexCache[newType];
@@ -1437,7 +1437,7 @@ function tick(){
 
   // ── Flock — STRONGER cohesion, always returns ──
   const lp=lead.position;
-  for(let i=0;i<FN;i++){
+  for(let i=0;i<fl.length;i++){
     const b=fl[i],v=b.userData.vel,p=b.position;
 
     // Distance to leader
@@ -1460,7 +1460,7 @@ function tick(){
     }
 
     // Separation
-    for(let j=0;j<FN;j++){
+    for(let j=0;j<fl.length;j++){
       if(i===j)continue;
       const sx=p.x-fl[j].position.x,sy=p.y-fl[j].position.y,sz=p.z-fl[j].position.z;
       const d2=sx*sx+sy*sy+sz*sz;
